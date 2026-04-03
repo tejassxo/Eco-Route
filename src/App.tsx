@@ -35,6 +35,7 @@ const MapPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isPanelExpanded, setIsPanelExpanded] = useState(true);
   const [carPosition, setCarPosition] = useState<[number, number] | null>(null);
   const [carHeading, setCarHeading] = useState(0);
   const [currentVehicle, setCurrentVehicle] = useState<VehicleType>(VehicleType.PETROL_CAR);
@@ -49,6 +50,9 @@ const MapPage = () => {
   });
 
   const handleMapClick = async (lat: number, lon: number) => {
+    if (window.innerWidth < 1024) {
+      setIsPanelExpanded(false);
+    }
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
         headers: { 'User-Agent': 'EcoRouteApp/1.0' }
@@ -70,6 +74,7 @@ const MapPage = () => {
   };
 
   const handleSearch = useCallback(async (source: string, destination: string, vehicle: VehicleType, providedSourceCoords?: [number, number], providedDestCoords?: [number, number]) => {
+    setIsPanelExpanded(true);
     setIsLoading(true);
     setError(null);
     setCurrentVehicle(vehicle);
@@ -173,9 +178,9 @@ const MapPage = () => {
   const savings = (ecoRoute && worstRoute) ? worstRoute.emissions - ecoRoute.emissions : 0;
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex flex-col lg:flex-row h-screen bg-gray-50 overflow-hidden font-sans relative">
       {/* Left: Map */}
-      <div className="flex-1 relative order-2 lg:order-1">
+      <div className="flex-1 relative w-full h-full">
         <MapComponent 
           routes={routes} 
           selectedRouteIndex={selectedRouteIndex}
@@ -195,7 +200,7 @@ const MapPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="absolute bottom-6 left-6 right-6 lg:right-auto lg:w-80 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/20 z-10"
+              className="absolute top-6 lg:top-auto lg:bottom-6 left-6 right-6 lg:right-auto lg:w-80 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/20 z-10"
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
@@ -233,13 +238,21 @@ const MapPage = () => {
       <AnimatePresence>
         {!isNavigating && (
           <motion.div 
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={{ y: '100%' }}
+            animate={{ y: isPanelExpanded ? 0 : 'calc(100% - 80px)' }}
+            exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="w-full lg:w-[450px] bg-white border-l border-gray-100 flex flex-col order-1 lg:order-2 shadow-2xl z-20 absolute lg:relative right-0 h-full"
+            className="w-full lg:w-[450px] bg-white border-t lg:border-t-0 lg:border-l border-gray-100 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:shadow-2xl z-20 absolute bottom-0 lg:relative lg:bottom-auto lg:right-0 h-[80vh] lg:h-full rounded-t-3xl lg:rounded-none lg:!transform-none"
           >
-            <header className="p-6 border-bottom border-gray-50">
+            {/* Mobile Drag Handle */}
+            <div 
+              className="w-full h-10 flex items-center justify-center lg:hidden cursor-pointer"
+              onClick={() => setIsPanelExpanded(!isPanelExpanded)}
+            >
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+            </div>
+
+            <header className="px-6 pb-4 pt-2 lg:pt-6 border-b border-gray-50">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white">
                   <Leaf size={18} />

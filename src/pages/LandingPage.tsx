@@ -14,10 +14,10 @@ export const LandingPage = () => {
   }, []);
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
-      <h1 className="hero-text text-6xl font-black text-gray-900 mb-6">EcoRoute</h1>
-      <p className="hero-text text-xl text-gray-600 mb-8">Green travel, smarter routes.</p>
-      <div className="flex gap-4">
+    <div ref={containerRef} className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 md:p-8 text-center">
+      <h1 className="hero-text text-5xl md:text-6xl font-black text-gray-900 mb-6">EcoRoute</h1>
+      <p className="hero-text text-lg md:text-xl text-gray-600 mb-8">Green travel, smarter routes.</p>
+      <div className="flex flex-col sm:flex-row gap-4">
         <Link to="/map" className="hero-btn px-6 py-3 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700">Get Started</Link>
         <Link to="/about" className="hero-btn px-6 py-3 bg-gray-200 text-gray-800 rounded-full font-bold hover:bg-gray-300">About</Link>
       </div>

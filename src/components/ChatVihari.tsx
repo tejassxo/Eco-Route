@@ -36,21 +36,27 @@ export const ChatVihari = () => {
           <MessageCircle />
         </button>
       ) : (
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white w-80 h-96 rounded-2xl shadow-2xl flex flex-col overflow-hidden border">
-          <div className="bg-emerald-600 text-white p-4 flex justify-between items-center">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white w-[calc(100vw-3rem)] sm:w-80 h-[60vh] sm:h-96 max-h-[500px] rounded-2xl shadow-2xl flex flex-col overflow-hidden border">
+          <div className="bg-emerald-600 text-white p-4 flex justify-between items-center shrink-0">
             <span className="font-bold">Vihari Assistant</span>
             <button onClick={() => setIsOpen(false)}><X size={20} /></button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col">
             {messages.map((msg, i) => (
-              <div key={i} className={`p-2 rounded-lg ${msg.role === 'user' ? 'bg-emerald-100 self-end' : 'bg-gray-100 self-start'}`}>
+              <div key={i} className={`p-3 rounded-xl max-w-[85%] text-sm ${msg.role === 'user' ? 'bg-emerald-100 text-emerald-900 self-end rounded-br-sm' : 'bg-gray-100 text-gray-800 self-start rounded-bl-sm'}`}>
                 {msg.text}
               </div>
             ))}
           </div>
-          <div className="p-4 border-t flex gap-2">
-            <input value={input} onChange={(e) => setInput(e.target.value)} className="flex-1 p-2 border rounded-lg" placeholder="Ask Vihari..." />
-            <button onClick={handleSend} className="bg-emerald-600 text-white p-2 rounded-lg"><Send size={18} /></button>
+          <div className="p-4 border-t flex gap-2 shrink-0 bg-gray-50">
+            <input 
+              value={input} 
+              onChange={(e) => setInput(e.target.value)} 
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              className="flex-1 p-3 border-transparent focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl bg-white text-sm outline-none transition-all" 
+              placeholder="Ask Vihari..." 
+            />
+            <button onClick={handleSend} className="bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl transition-colors"><Send size={18} /></button>
           </div>
         </motion.div>
       )}
