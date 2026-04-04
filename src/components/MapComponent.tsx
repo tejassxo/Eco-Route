@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, useMapEvents, LayersControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { RouteData } from '../types';
-import { Compass, Navigation, Zap, LocateFixed, Map as MapIcon } from 'lucide-react';
+import { RouteData, VehicleType } from '../types';
+import { Compass, Navigation, Zap, LocateFixed, Map as MapIcon, List, X as CloseIcon, Battery } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { getNearbyEVStations, ChargingStation } from '../services/mapsService';
 
 // Fix for default leaflet marker icons
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -34,6 +35,7 @@ interface MapComponentProps {
   onMapClick?: (lat: number, lon: number) => void;
   hoveredRouteId?: string | number | null;
   onRouteHover?: (id: string | number | null) => void;
+  vehicleType?: VehicleType;
 }
 
 const MapController = ({ routes, selectedRouteIndex, isNavigating, carPosition, carHeading, userLocation, shouldRecenter }: any) => {
@@ -74,7 +76,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   carHeading,
   onMapClick,
   hoveredRouteId,
-  onRouteHover
+  onRouteHover,
+  vehicleType
 }) => {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,6 +89,18 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const lastPosRef = useRef<{lat: number, lon: number, time: number} | null>(null);
 
   const [speedTrend, setSpeedTrend] = useState<'up' | 'down' | 'stable'>('stable');
+  const [activeLayer, setActiveLayer] = useState<keyof typeof MAP_LAYERS>('street');
+  const [showLayerMenu, setShowLayerMenu] = useState(false);
+  const [chargingStations, setChargingStations] = useState<ChargingStation[]>([]);
+  const [showStepsOverlay, setShowStepsOverlay] = useState(false);
+
+  useEffect(() => {
+    if (vehicleType === VehicleType.ELECTRIC_VEHICLE && userLocation) {
+      getNearbyEVStations(userLocation[0], userLocation[1]).then(setChargingStations);
+    } else {
+      setChargingStations([]);
+    }
+  }, [vehicleType, userLocation]);
 
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -184,6 +199,19 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     iconAnchor: [8, 8],
   });
 
+  const evIcon = L.divIcon({
+    html: `
+      <div class="bg-emerald-600 p-1.5 rounded-full border-2 border-white shadow-lg text-white">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 2L3 11h8l-2 11 8-9h-8l2-11z"></path>
+        </svg>
+      </div>
+    `,
+    className: '',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+
   return (
     <div className="relative w-full h-full group">
       {isLoading && <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-white/50 backdrop-blur-sm">
@@ -202,13 +230,85 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         >
           <LocateFixed size={24} className="group-hover/btn:rotate-12 transition-transform" />
         </button>
-        <button 
-          className="p-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 text-gray-700 hover:bg-white hover:text-emerald-600 transition-all active:scale-95"
-          title="Map Layers"
-        >
-          <MapIcon size={24} />
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => setShowLayerMenu(!showLayerMenu)}
+            className={`p-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 text-gray-700 hover:bg-white hover:text-emerald-600 transition-all active:scale-95 ${showLayerMenu ? 'text-emerald-600' : ''}`}
+            title="Map Layers"
+          >
+            <MapIcon size={24} />
+          </button>
+          
+          <AnimatePresence>
+            {showLayerMenu && (
+              <motion.div 
+                initial={{ opacity: 0, x: 20, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 20, scale: 0.9 }}
+                className="absolute right-full mr-3 top-0 bg-white/90 backdrop-blur-xl p-2 rounded-2xl shadow-2xl border border-white/20 flex flex-col gap-1 min-w-[120px]"
+              >
+                {(Object.keys(MAP_LAYERS) as Array<keyof typeof MAP_LAYERS>).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setActiveLayer(key);
+                      setShowLayerMenu(false);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all text-left ${activeLayer === key ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-gray-600'}`}
+                  >
+                    {MAP_LAYERS[key].name}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {routes.length > 0 && (
+          <button 
+            onClick={() => setShowStepsOverlay(!showStepsOverlay)}
+            className={`p-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 text-gray-700 hover:bg-white hover:text-emerald-600 transition-all active:scale-95 ${showStepsOverlay ? 'text-emerald-600' : ''}`}
+            title="Route Steps"
+          >
+            <List size={24} />
+          </button>
+        )}
       </div>
+
+      {/* Route Steps Overlay */}
+      <AnimatePresence>
+        {showStepsOverlay && routes[selectedRouteIndex] && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="absolute bottom-32 left-6 right-6 lg:left-auto lg:right-6 lg:w-80 bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 z-[1000] overflow-hidden max-h-[40dvh] flex flex-col"
+          >
+            <div className="p-4 bg-emerald-600 text-white flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-2">
+                <Navigation size={18} />
+                <span className="font-bold text-sm">Route Details</span>
+              </div>
+              <button onClick={() => setShowStepsOverlay(false)} className="hover:bg-white/20 p-1 rounded-lg transition-colors">
+                <CloseIcon size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {routes[selectedRouteIndex].steps?.map((step, i) => (
+                <div key={i} className="flex gap-3 items-start">
+                  <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 border border-emerald-100">
+                    {i + 1}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-800 leading-tight">{step.instruction}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">{step.distance.toFixed(2)} km</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Speedometer & GPS Info */}
       <div className="absolute bottom-6 left-6 z-[1000] flex flex-col gap-3">
@@ -252,26 +352,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       </div>
 
       <MapContainer center={userLocation || [20.5937, 78.9629]} zoom={13} className="w-full h-full" zoomControl={false}>
-        <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Street">
-            <TileLayer url={MAP_LAYERS.street.url} />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Satellite">
-            <TileLayer 
-              url={MAP_LAYERS.satellite.url}
-              attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Terrain">
-            <TileLayer 
-              url={MAP_LAYERS.terrain.url}
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-          </LayersControl.BaseLayer>
-        </LayersControl>
+        <TileLayer 
+          url={MAP_LAYERS[activeLayer].url} 
+          attribution={activeLayer === 'satellite' ? '&copy; Esri' : activeLayer === 'terrain' ? '&copy; OpenTopoMap' : '&copy; OpenStreetMap'}
+        />
         <MapEvents onMapClick={onMapClick} />
-        
-        {userLocation && <Marker position={userLocation} icon={userIcon} zIndexOffset={500} />}
         
         {routes.map((route, index) => {
           const isSelected = index === selectedRouteIndex;
@@ -279,22 +364,62 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           if (!route.polyline || route.polyline.length === 0) return null;
           
           return (
-            <Polyline
-              key={route.id}
-              positions={route.polyline}
-              pathOptions={{
-                color: isSelected ? (route.isEco ? '#10b981' : '#3b82f6') : '#9ca3af',
-                weight: isHovered ? 8 : (isSelected ? 6 : 4),
-                opacity: isHovered ? 1 : (isSelected ? 0.9 : 0.5),
-              }}
-              eventHandlers={{
-                click: () => !isNavigating && onRouteSelect(index),
-                mouseover: () => !isNavigating && onRouteHover?.(route.id),
-                mouseout: () => !isNavigating && onRouteHover?.(null),
-              }}
-            />
+            <React.Fragment key={route.id}>
+              {/* Halo effect for visibility on all layers */}
+              <Polyline
+                positions={route.polyline}
+                pathOptions={{
+                  color: 'white',
+                  weight: isHovered ? 12 : (isSelected ? 10 : 8),
+                  opacity: 0.4,
+                  lineCap: 'round',
+                  lineJoin: 'round'
+                }}
+              />
+              <Polyline
+                positions={route.polyline}
+                pathOptions={{
+                  color: isSelected ? (route.isEco ? '#10b981' : '#3b82f6') : '#9ca3af',
+                  weight: isHovered ? 8 : (isSelected ? 6 : 4),
+                  opacity: isHovered ? 1 : (isSelected ? 0.9 : 0.5),
+                  lineCap: 'round',
+                  lineJoin: 'round'
+                }}
+                eventHandlers={{
+                  click: () => !isNavigating && onRouteSelect(index),
+                  mouseover: () => !isNavigating && onRouteHover?.(route.id),
+                  mouseout: () => !isNavigating && onRouteHover?.(null),
+                }}
+              />
+            </React.Fragment>
           );
         })}
+
+        {userLocation && <Marker position={userLocation} icon={userIcon} zIndexOffset={500} />}
+
+        {chargingStations.map((station, idx) => (
+          <Marker 
+            key={`ev-${idx}`} 
+            position={[station.lat, station.lng]} 
+            icon={evIcon}
+          >
+            <Popup>
+              <div className="p-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <Battery size={16} className="text-emerald-600" />
+                  <h3 className="font-bold text-sm">{station.name}</h3>
+                </div>
+                <p className="text-xs text-gray-500">{station.address}</p>
+                <button 
+                  onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}`, '_blank')}
+                  className="mt-2 w-full bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-lg hover:bg-emerald-700 transition-colors"
+                >
+                  Navigate Here
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
 
         {isNavigating && carPosition && (
           <Marker position={carPosition} icon={customNavIcon} zIndexOffset={1000} />

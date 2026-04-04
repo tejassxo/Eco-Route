@@ -7,7 +7,7 @@ import { NavigationOverlay } from './components/NavigationOverlay';
 import { VehicleType, RouteData, SavedRoute } from './types';
 import { calculateEmissions } from './utils/emissionCalculator';
 import { motion, AnimatePresence } from 'motion/react';
-import { Leaf, Info, AlertCircle, BarChart2, BookmarkPlus } from 'lucide-react';
+import { Leaf, Info, AlertCircle, BarChart2, BookmarkPlus, Key } from 'lucide-react';
 import { LandingPage } from './pages/LandingPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactUsPage } from './pages/ContactUsPage';
@@ -18,10 +18,68 @@ import { ScenicOpening } from './components/ScenicOpening';
 import { Dashboard } from './components/Dashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+// Declare window.aistudio
+declare global {
+  interface Window {
+    aistudio?: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
+  }
+}
+
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="h-screen flex items-center justify-center"><Leaf className="animate-spin text-emerald-600" /></div>;
+  const [hasKey, setHasKey] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (window.aistudio) {
+        try {
+          const selected = await window.aistudio.hasSelectedApiKey();
+          setHasKey(selected);
+        } catch (e) {
+          console.error("Failed to check API key", e);
+          setHasKey(true); // Fallback to true if aistudio is not available
+        }
+      } else {
+        setHasKey(true); // Fallback to true if aistudio is not available
+      }
+    };
+    checkKey();
+  }, []);
+
+  if (loading || hasKey === null) return <div className="h-screen flex items-center justify-center"><Leaf className="animate-spin text-emerald-600" /></div>;
   if (!user) return <Navigate to="/" />;
+
+  if (!hasKey) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Key size={32} />
+          </div>
+          <h2 className="text-2xl font-black text-gray-900 mb-4">API Key Required</h2>
+          <p className="text-gray-600 mb-8">
+            To use the advanced AI features of EcoRoute, you need to provide a Gemini API key. 
+            You can get one from the <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="text-emerald-600 font-bold hover:underline">Google AI Studio billing page</a>.
+          </p>
+          <button
+            onClick={async () => {
+              if (window.aistudio) {
+                await window.aistudio.openSelectKey();
+                setHasKey(true); // Assume success to mitigate race condition
+              }
+            }}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all"
+          >
+            Select API Key
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return <>{children}</>;
 };
 
@@ -91,16 +149,39 @@ const MapPage = () => {
   };
 
   const handleSaveRoute = () => {
-    if (!currentSearch) return;
-    const newSaved = [...savedRoutes, { id: Date.now().toString(), ...currentSearch }];
-    setSavedRoutes(newSaved);
-    localStorage.setItem('eco_saved_routes', JSON.stringify(newSaved));
+    if (!currentSearch || routes.length === 0) return;
+    const selectedRoute = routes[selectedRouteIndex];
+    const newSaved: SavedRoute = { 
+      id: Date.now().toString(), 
+      ...currentSearch,
+      routeData: selectedRoute 
+    };
+    const updatedSaved = [...savedRoutes, newSaved];
+    setSavedRoutes(updatedSaved);
+    localStorage.setItem('eco_saved_routes', JSON.stringify(updatedSaved));
   };
+
+  const handleOpenGoogleMaps = (route: RouteData) => {
+    if (!currentSearch) return;
+    const origin = currentSearch.source;
+    const destination = currentSearch.destination;
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
+    window.open(url, '_blank');
+  };
+
+  const handleViewOffline = (route: RouteData) => {
+    setRoutes([route]);
+    setSelectedRouteIndex(0);
+    setIsPanelExpanded(true);
+  };
+
+  const [ecoTips, setEcoTips] = useState<string | null>(null);
 
   const handleSearch = useCallback(async (source: string, destination: string, vehicle: VehicleType, providedSourceCoords?: [number, number], providedDestCoords?: [number, number]) => {
     setIsPanelExpanded(true);
     setIsLoading(true);
     setError(null);
+    setEcoTips(null);
     setCurrentVehicle(vehicle);
     setCurrentSearch({ source, destination, sourceCoords: providedSourceCoords, destCoords: providedDestCoords });
 
@@ -129,21 +210,22 @@ const MapPage = () => {
         throw new Error("No driving routes found between these locations.");
       }
 
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const prompt = `I have found ${osrmData.routes.length} driving routes from ${source} to ${destination}. Provide a short, catchy 2-3 word summary name for each route (e.g., "Fastest Route", "Scenic Path"). Return a JSON array of strings.`;
-
       let summaries = ["Main Route", "Alternative 1", "Alternative 2"];
       try {
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
-          }
-        });
-        const aiSummaries = JSON.parse(response.text || "[]");
-        if (aiSummaries.length >= osrmData.routes.length) summaries = aiSummaries;
+        if (process.env.API_KEY || process.env.GEMINI_API_KEY) {
+          const ai = new GoogleGenAI({ apiKey: (process.env.API_KEY || process.env.GEMINI_API_KEY) as string });
+          const prompt = `I have found ${osrmData.routes.length} driving routes from ${source} to ${destination}. Provide a short, catchy 2-3 word summary name for each route (e.g., "Fastest Route", "Scenic Path"). Return a JSON array of strings.`;
+          const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+              responseMimeType: "application/json",
+              responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
+            }
+          });
+          const aiSummaries = JSON.parse(response.text || "[]");
+          if (aiSummaries.length >= osrmData.routes.length) summaries = aiSummaries;
+        }
       } catch (e) { console.error("AI summary failed, using defaults", e); }
 
       const processedRoutes: RouteData[] = osrmData.routes.map((route: any, index: number) => {
@@ -188,7 +270,23 @@ const MapPage = () => {
       }));
 
       setRoutes(finalRoutes);
-      setSelectedRouteIndex(finalRoutes.findIndex(r => r.isEco));
+      const initialSelected = finalRoutes.findIndex(r => r.isEco);
+      setSelectedRouteIndex(initialSelected);
+
+      // Fetch Eco Tips via Gemini
+      try {
+        if (process.env.API_KEY || process.env.GEMINI_API_KEY) {
+          const ai = new GoogleGenAI({ apiKey: (process.env.API_KEY || process.env.GEMINI_API_KEY) as string });
+          const selectedRoute = finalRoutes[initialSelected];
+          const prompt = `Provide 2-3 short, actionable eco-friendly driving tips for a ${selectedRoute.distance.toFixed(1)}km trip from ${source} to ${destination} using a ${vehicle}. Focus on reducing CO2 emissions.`;
+          const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: { tools: [{ googleSearch: {} }] }
+          });
+          setEcoTips(response.text || null);
+        }
+      } catch (e) { console.error("Eco tips failed", e); }
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Could not find routes. Please try again.");
@@ -215,6 +313,7 @@ const MapPage = () => {
           onMapClick={handleMapClick}
           hoveredRouteId={hoveredRouteId}
           onRouteHover={setHoveredRouteId}
+          vehicleType={currentVehicle}
         />
         
         {/* Floating Stats Overlay (Hidden during navigation) */}
@@ -239,7 +338,7 @@ const MapPage = () => {
                 </div>
               </div>
               <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                By choosing the greenest path, you're reducing your carbon footprint significantly.
+                {ecoTips || "By choosing the greenest path, you're reducing your carbon footprint significantly."}
               </p>
             </motion.div>
           )}
@@ -294,6 +393,7 @@ const MapPage = () => {
                   isLoading={isLoading} 
                   externalDestination={mapSelectedDest}
                   savedRoutes={savedRoutes}
+                  onViewOffline={handleViewOffline}
                 />
               </section>
 
@@ -369,6 +469,7 @@ const MapPage = () => {
                             setCarPosition(route.polyline[0]);
                             setIsNavigating(true);
                           }}
+                          onOpenGoogleMaps={() => handleOpenGoogleMaps(route)}
                           savings={route.isEco ? savings : undefined}
                         />
                       ))}

@@ -8,12 +8,13 @@ interface RouteCardProps {
   isSelected: boolean;
   onSelect: () => void;
   onStartNavigation?: () => void;
+  onOpenGoogleMaps?: () => void;
   savings?: number;
   onHover?: () => void;
   onLeave?: () => void;
 }
 
-export const RouteCard: React.FC<RouteCardProps> = ({ route, isSelected, onSelect, onStartNavigation, savings, onHover, onLeave }) => {
+export const RouteCard: React.FC<RouteCardProps> = ({ route, isSelected, onSelect, onStartNavigation, onOpenGoogleMaps, savings, onHover, onLeave }) => {
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportType, setReportType] = useState('');
@@ -129,21 +130,32 @@ export const RouteCard: React.FC<RouteCardProps> = ({ route, isSelected, onSelec
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setShowReportModal(true); }}
-                  className="bg-gray-50 hover:bg-gray-100 text-gray-500 font-bold px-4 rounded-xl transition-all flex items-center justify-center border border-gray-100"
-                  title="Report Issue"
-                >
-                  <AlertTriangle size={18} />
-                </button>
-                {onStartNavigation && (
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
                   <button 
-                    onClick={(e) => { e.stopPropagation(); onStartNavigation(); }}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                    onClick={(e) => { e.stopPropagation(); setShowReportModal(true); }}
+                    className="bg-gray-50 hover:bg-gray-100 text-gray-500 font-bold px-4 rounded-xl transition-all flex items-center justify-center border border-gray-100"
+                    title="Report Issue"
                   >
-                    <Navigation size={18} />
-                    Start Navigation
+                    <AlertTriangle size={18} />
+                  </button>
+                  {onStartNavigation && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onStartNavigation(); }}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                    >
+                      <Navigation size={18} />
+                      Start Navigation
+                    </button>
+                  )}
+                </div>
+                {onOpenGoogleMaps && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onOpenGoogleMaps(); }}
+                    className="w-full bg-white hover:bg-gray-50 text-emerald-600 font-bold py-3 rounded-xl border-2 border-emerald-100 transition-all flex items-center justify-center gap-2"
+                  >
+                    <MapPin size={18} />
+                    Open in Google Maps
                   </button>
                 )}
               </div>

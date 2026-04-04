@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Navigation, Car, MapPin, Bookmark } from 'lucide-react';
-import { VehicleType, SavedRoute } from '../types';
+import { VehicleType, SavedRoute, RouteData } from '../types';
 import { VEHICLE_STATS } from '../utils/emissionCalculator';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -10,9 +10,10 @@ interface InputFormProps {
   externalDestination?: { name: string, coords: [number, number] } | null;
   savedRoutes?: SavedRoute[];
   onSelectSavedRoute?: (route: SavedRoute) => void;
+  onViewOffline?: (route: RouteData) => void;
 }
 
-export const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading, externalDestination, savedRoutes, onSelectSavedRoute }) => {
+export const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading, externalDestination, savedRoutes, onSelectSavedRoute, onViewOffline }) => {
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
   const [vehicle, setVehicle] = useState<VehicleType>(VehicleType.PETROL_CAR);
@@ -120,11 +121,20 @@ export const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading, exter
                   setDestination(sr.destination);
                   setSourceCoords(sr.sourceCoords);
                   setDestCoords(sr.destCoords);
-                  if (onSelectSavedRoute) onSelectSavedRoute(sr);
+                  if (sr.routeData && onViewOffline) {
+                    onViewOffline(sr.routeData);
+                  } else if (onSelectSavedRoute) {
+                    onSelectSavedRoute(sr);
+                  }
                 }}
-                className="whitespace-nowrap px-3 py-2 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-xl border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-1"
+                className={`whitespace-nowrap px-3 py-2 text-xs font-medium rounded-xl border transition-all flex items-center gap-1 ${
+                  sr.routeData 
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm' 
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                }`}
               >
                 {sr.source.split(',')[0]} → {sr.destination.split(',')[0]}
+                {sr.routeData && <span className="text-[8px] opacity-70 ml-1">(Offline Ready)</span>}
               </button>
             ))}
           </div>

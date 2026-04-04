@@ -29,4 +29,5 @@ export interface SavedRoute {
   destination: string;
   sourceCoords?: [number, number];
   destCoords?: [number, number];
+  routeData?: RouteData;
 }
