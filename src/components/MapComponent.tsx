@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -70,10 +70,14 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { setUserLocation([pos.coords.latitude, pos.coords.longitude]); setIsLoading(false); },
-      () => { setIsLoading(false); }
-    );
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { setUserLocation([pos.coords.latitude, pos.coords.longitude]); setIsLoading(false); },
+        () => { setIsLoading(false); }
+      );
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const customNavIcon = L.divIcon({

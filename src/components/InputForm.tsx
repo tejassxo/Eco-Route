@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Navigation, Car, Bike, Zap, MapPin, Bookmark } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Navigation, Car, MapPin, Bookmark } from 'lucide-react';
 import { VehicleType, SavedRoute } from '../types';
 import { VEHICLE_STATS } from '../utils/emissionCalculator';
 import { motion, AnimatePresence } from 'motion/react';
@@ -65,6 +65,10 @@ export const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading, exter
   }, [destination, showDestSuggestions]);
 
   const handleLocateMe = () => {
+    if (!('geolocation' in navigator)) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords;
       try {
@@ -86,6 +90,9 @@ export const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading, exter
         console.error("Locate me error:", error);
         alert("Could not determine your address. Please enter it manually.");
       }
+    }, (error) => {
+      console.error("Geolocation error:", error);
+      alert("Could not get your location. Please check your device permissions.");
     });
   };
 

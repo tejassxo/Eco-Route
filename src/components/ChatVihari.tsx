@@ -36,7 +36,7 @@ export const ChatVihari = () => {
           <MessageCircle />
         </button>
       ) : (
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white w-[calc(100vw-3rem)] sm:w-80 h-[60vh] sm:h-96 max-h-[500px] rounded-2xl shadow-2xl flex flex-col overflow-hidden border">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white w-[calc(100vw-3rem)] sm:w-80 h-[60dvh] sm:h-96 max-h-[500px] rounded-2xl shadow-2xl flex flex-col overflow-hidden border">
           <div className="bg-emerald-600 text-white p-4 flex justify-between items-center shrink-0">
             <span className="font-bold">Vihari Assistant</span>
             <button onClick={() => setIsOpen(false)}><X size={20} /></button>

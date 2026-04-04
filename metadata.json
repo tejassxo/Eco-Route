@@ -1,5 +1,5 @@
 {
   "name": "EcoRoute",
-  "description": "An eco-friendly route planner that calculates CO2 emissions and suggests the greenest paths using Google Maps.",
+  "description": "An eco-friendly route planner that calculates CO2 emissions and suggests the greenest paths using OpenStreetMap and OSRM.",
   "requestFramePermissions": ["geolocation"]
 }

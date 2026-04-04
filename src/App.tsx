@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useState, useCallback, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MapComponent } from './components/MapComponent';
 import { InputForm } from './components/InputForm';
 import { RouteCard } from './components/RouteCard';
@@ -13,6 +13,16 @@ import { AboutPage } from './pages/AboutPage';
 import { ContactUsPage } from './pages/ContactUsPage';
 import { ChatVihari } from './components/ChatVihari';
 import { GoogleGenAI, Type } from '@google/genai';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ScenicOpening } from './components/ScenicOpening';
+import { Dashboard } from './components/Dashboard';
+
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="h-screen flex items-center justify-center"><Leaf className="animate-spin text-emerald-600" /></div>;
+  if (!user) return <Navigate to="/" />;
+  return <>{children}</>;
+};
 
 const geocode = async (query: string) => {
   try {
@@ -50,9 +60,6 @@ const MapPage = () => {
   });
 
   const handleMapClick = async (lat: number, lon: number) => {
-    if (window.innerWidth < 1024) {
-      setIsPanelExpanded(false);
-    }
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
         headers: { 'User-Agent': 'EcoRouteApp/1.0' }
@@ -60,6 +67,9 @@ const MapPage = () => {
       const data = await res.json();
       if (data && data.display_name) {
         setMapSelectedDest({ name: data.display_name, coords: [lat, lon] });
+        if (window.innerWidth < 1024) {
+          setIsPanelExpanded(true);
+        }
       }
     } catch (e) {
       console.error("Reverse geocoding error:", e);
@@ -178,7 +188,7 @@ const MapPage = () => {
   const savings = (ecoRoute && worstRoute) ? worstRoute.emissions - ecoRoute.emissions : 0;
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen bg-gray-50 overflow-hidden font-sans relative">
+    <div className="flex flex-col lg:flex-row h-[100dvh] bg-gray-50 overflow-hidden font-sans relative">
       {/* Left: Map */}
       <div className="flex-1 relative w-full h-full">
         <MapComponent 
@@ -201,6 +211,7 @@ const MapPage = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               className="absolute top-6 lg:top-auto lg:bottom-6 left-6 right-6 lg:right-auto lg:w-80 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/20 z-10"
+              style={{ marginTop: 'env(safe-area-inset-top)' }}
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
@@ -242,7 +253,7 @@ const MapPage = () => {
             animate={{ y: isPanelExpanded ? 0 : 'calc(100% - 80px)' }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="w-full lg:w-[450px] bg-white border-t lg:border-t-0 lg:border-l border-gray-100 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:shadow-2xl z-20 absolute bottom-0 lg:relative lg:bottom-auto lg:right-0 h-[80vh] lg:h-full rounded-t-3xl lg:rounded-none lg:!transform-none"
+            className="w-full lg:w-[450px] bg-white border-t lg:border-t-0 lg:border-l border-gray-100 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:shadow-2xl z-20 absolute bottom-0 lg:relative lg:bottom-auto lg:right-0 h-[80dvh] lg:h-full rounded-t-3xl lg:rounded-none lg:!transform-none"
           >
             {/* Mobile Drag Handle */}
             <div 
@@ -380,19 +391,38 @@ const MapPage = () => {
 };
 
 export default function App() {
+  const [showOpening, setShowOpening] = useState(() => {
+    return !sessionStorage.getItem('opening_shown');
+  });
+
+  const handleOpeningComplete = () => {
+    setShowOpening(false);
+    sessionStorage.setItem('opening_shown', 'true');
+  };
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactUsPage />} />
-        <Route path="/map" element={
-          <div className="relative h-screen">
-            <MapPage />
-            <ChatVihari />
-          </div>
-        } />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <AnimatePresence>
+          {showOpening && <ScenicOpening onComplete={handleOpeningComplete} />}
+        </AnimatePresence>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactUsPage />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/map" element={
+            <div className="relative h-[100dvh]">
+              <MapPage />
+              <ChatVihari />
+            </div>
+          } />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { Navigation, X, Leaf, Compass, Volume2, VolumeX } from 'lucide-react';
+import { X, Leaf, Compass, Volume2, VolumeX } from 'lucide-react';
 import { RouteData, VehicleType } from '../types';
 import { calculateEmissions } from '../utils/emissionCalculator';
 
@@ -88,36 +88,42 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ route, veh
 
   // TTS for instructions
   useEffect(() => {
-    if (!isMuted && currentStep && currentStep.instruction) {
-      // Cancel any ongoing speech
-      window.speechSynthesis.cancel();
-      
-      const textToSpeak = `${currentStep.instruction}. ${currentStep.distance > 0 ? `In ${Math.round(currentStep.distance * 1000)} meters.` : ''}`;
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      
-      // Try to find a good voice
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(v => v.lang.includes('en') && v.name.includes('Google')) || voices.find(v => v.lang.includes('en'));
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
+    if (!isMuted && currentStep && currentStep.instruction && 'speechSynthesis' in window) {
+      try {
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        
+        const textToSpeak = `${currentStep.instruction}. ${currentStep.distance > 0 ? `In ${Math.round(currentStep.distance * 1000)} meters.` : ''}`;
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        
+        // Try to find a good voice
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.lang.includes('en') && v.name.includes('Google')) || voices.find(v => v.lang.includes('en'));
+        if (preferredVoice) {
+          utterance.voice = preferredVoice;
+        }
+        
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.error("Speech synthesis error:", e);
       }
-      
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      
-      window.speechSynthesis.speak(utterance);
     }
   }, [currentStepIndex, isMuted]);
 
   // Stop speech when unmounting
   useEffect(() => {
     return () => {
-      window.speechSynthesis.cancel();
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
     };
   }, []);
 
   return (
-    <div ref={containerRef} className="absolute inset-x-0 top-4 z-[1000] p-4 pointer-events-none flex flex-col items-center gap-3">
+    <div ref={containerRef} className="absolute inset-x-0 top-0 z-[1000] p-4 pointer-events-none flex flex-col items-center gap-3" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
       
       {/* Top Bar: Turn by Turn */}
       <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 p-4 flex items-center justify-between pointer-events-auto">

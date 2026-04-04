@@ -23,11 +23,6 @@ export interface RouteData {
   bounds?: [[number, number], [number, number]];
 }
 
-export interface EmissionResult {
-  emissions: number;
-  fuelConsumption: number;
-}
-
 export interface SavedRoute {
   id: string;
   source: string;
