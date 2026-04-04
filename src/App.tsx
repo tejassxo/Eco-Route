@@ -16,6 +16,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ScenicOpening } from './components/ScenicOpening';
 import { Dashboard } from './components/Dashboard';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -29,13 +30,19 @@ const geocode = async (query: string) => {
     const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
       headers: { 'User-Agent': 'EcoRouteApp/1.0' }
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (res.status === 429) throw new Error("Too many requests. Please wait a moment.");
+      throw new Error(`Geocoding service error: ${res.status}`);
+    }
     const data = await res.json();
-    if (data && data.length > 0) return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    if (data && data.length > 0) return [parseFloat(data[0].lat), parseFloat(data[0].lon)] as [number, number];
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Geocoding error:", error);
-    return null;
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error("Network error. Please check your internet connection.");
+    }
+    throw error;
   }
 };
 
@@ -64,6 +71,7 @@ const MapPage = () => {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
         headers: { 'User-Agent': 'EcoRouteApp/1.0' }
       });
+      if (!res.ok) throw new Error("Reverse geocoding failed");
       const data = await res.json();
       if (data && data.display_name) {
         setMapSelectedDest({ name: data.display_name, coords: [lat, lon] });
@@ -71,8 +79,9 @@ const MapPage = () => {
           setIsPanelExpanded(true);
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Reverse geocoding error:", e);
+      setError("Could not identify the location on the map. Please try again.");
     }
   };
 
@@ -188,9 +197,9 @@ const MapPage = () => {
   const savings = (ecoRoute && worstRoute) ? worstRoute.emissions - ecoRoute.emissions : 0;
 
   return (
-    <div className="flex flex-col lg:flex-row h-[100dvh] bg-gray-50 overflow-hidden font-sans relative">
+    <div className="flex flex-col lg:flex-row h-[100dvh] bg-gray-50 overflow-hidden font-sans relative isolate">
       {/* Left: Map */}
-      <div className="flex-1 relative w-full h-full">
+      <div className="flex-1 relative w-full h-full z-0">
         <MapComponent 
           routes={routes} 
           selectedRouteIndex={selectedRouteIndex}
@@ -253,14 +262,14 @@ const MapPage = () => {
             animate={{ y: isPanelExpanded ? 0 : 'calc(100% - 80px)' }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="w-full lg:w-[450px] bg-white border-t lg:border-t-0 lg:border-l border-gray-100 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:shadow-2xl z-20 absolute bottom-0 lg:relative lg:bottom-auto lg:right-0 h-[80dvh] lg:h-full rounded-t-3xl lg:rounded-none lg:!transform-none"
+            className="w-full lg:w-[450px] bg-white/80 backdrop-blur-2xl border-t lg:border-t-0 lg:border-l border-white/40 flex flex-col shadow-[0_-15px_50px_rgba(0,0,0,0.1)] lg:shadow-2xl z-[2000] absolute bottom-0 lg:relative lg:bottom-auto lg:right-0 h-[85dvh] lg:h-full rounded-t-[3rem] lg:rounded-none lg:!transform-none overflow-hidden"
           >
             {/* Mobile Drag Handle */}
             <div 
-              className="w-full h-10 flex items-center justify-center lg:hidden cursor-pointer"
+              className="w-full h-14 flex items-center justify-center lg:hidden cursor-pointer touch-none active:bg-gray-50/50 transition-colors"
               onClick={() => setIsPanelExpanded(!isPanelExpanded)}
             >
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+              <div className="w-12 h-1.5 bg-gray-300/60 rounded-full"></div>
             </div>
 
             <header className="px-6 pb-4 pt-2 lg:pt-6 border-b border-gray-50">
@@ -391,38 +400,37 @@ const MapPage = () => {
 };
 
 export default function App() {
-  const [showOpening, setShowOpening] = useState(() => {
-    return !sessionStorage.getItem('opening_shown');
-  });
+  const [showOpening, setShowOpening] = useState(true);
 
   const handleOpeningComplete = () => {
     setShowOpening(false);
-    sessionStorage.setItem('opening_shown', 'true');
   };
 
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AnimatePresence>
-          {showOpening && <ScenicOpening onComplete={handleOpeningComplete} />}
-        </AnimatePresence>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactUsPage />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/map" element={
-            <div className="relative h-[100dvh]">
-              <MapPage />
-              <ChatVihari />
-            </div>
-          } />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
+          <AnimatePresence>
+            {showOpening && <ScenicOpening onComplete={handleOpeningComplete} />}
+          </AnimatePresence>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactUsPage />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/map" element={
+              <div className="relative h-[100dvh]">
+                <MapPage />
+                <ChatVihari />
+              </div>
+            } />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

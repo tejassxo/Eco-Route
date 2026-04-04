@@ -97,7 +97,12 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ route, veh
         const utterance = new SpeechSynthesisUtterance(textToSpeak);
         
         // Try to find a good voice
-        const voices = window.speechSynthesis.getVoices();
+        let voices: SpeechSynthesisVoice[] = [];
+        try {
+          voices = window.speechSynthesis.getVoices();
+        } catch (e) {
+          console.error("Error getting voices:", e);
+        }
         const preferredVoice = voices.find(v => v.lang.includes('en') && v.name.includes('Google')) || voices.find(v => v.lang.includes('en'));
         if (preferredVoice) {
           utterance.voice = preferredVoice;
@@ -123,7 +128,7 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ route, veh
   }, []);
 
   return (
-    <div ref={containerRef} className="absolute inset-x-0 top-0 z-[1000] p-4 pointer-events-none flex flex-col items-center gap-3" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+    <div ref={containerRef} className="absolute inset-x-0 top-0 z-[1500] p-4 pointer-events-none flex flex-col items-center gap-3" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
       
       {/* Top Bar: Turn by Turn */}
       <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 p-4 flex items-center justify-between pointer-events-auto">

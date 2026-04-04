@@ -23,14 +23,19 @@ export const ChatVihari = () => {
         contents: input,
         config: { systemInstruction: 'You are Vihari, a helpful assistant for the EcoRoute application. You help users with eco-friendly travel tips and information about the app.' }
       });
-      setMessages(prev => [...prev, { role: 'assistant', text: response.text || 'Sorry, I could not understand that.' }]);
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', text: 'Error connecting to Vihari.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', text: response.text || 'I am sorry, I could not process that request.' }]);
+    } catch (error: any) {
+      console.error("Gemini error:", error);
+      let errorMessage = 'I am having trouble connecting right now. Please try again later.';
+      if (error.message?.includes('API key')) {
+        errorMessage = 'Vihari is currently unavailable due to configuration issues.';
+      }
+      setMessages(prev => [...prev, { role: 'assistant', text: errorMessage }]);
     }
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-6 right-6 z-[2500]">
       {!isOpen ? (
         <button onClick={() => setIsOpen(true)} className="bg-emerald-600 text-white p-4 rounded-full shadow-lg hover:bg-emerald-700">
           <MessageCircle />

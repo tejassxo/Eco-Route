@@ -25,16 +25,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed:", error);
+      throw new Error(error.message || "Login failed. Please try again.");
     }
   };
 
   const logout = async () => {
     try {
       await signOut(auth);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Logout failed:", error);
+      throw new Error(error.message || "Logout failed. Please try again.");
     }
   };
 

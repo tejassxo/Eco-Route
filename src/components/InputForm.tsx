@@ -156,23 +156,34 @@ export const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading, exter
             </button>
             
             {/* Source Suggestions */}
-            {showSourceSuggestions && sourceSuggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-12 mt-1 bg-white border border-gray-100 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
-                {sourceSuggestions.map((s, i) => (
-                  <div 
-                    key={i} 
-                    className="p-3 hover:bg-emerald-50 cursor-pointer text-sm text-gray-700 border-b border-gray-50 last:border-b-0 transition-colors"
-                    onClick={() => {
-                      setSource(s.display_name);
-                      setSourceCoords([parseFloat(s.lat), parseFloat(s.lon)]);
-                      setShowSourceSuggestions(false);
-                    }}
-                  >
-                    {s.display_name}
-                  </div>
-                ))}
-              </div>
-            )}
+            <AnimatePresence>
+              {showSourceSuggestions && sourceSuggestions.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  className="absolute top-full left-0 right-12 mt-2 bg-white/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl z-[5000] max-h-64 overflow-y-auto overflow-x-hidden custom-scrollbar"
+                >
+                  {sourceSuggestions.map((s, i) => (
+                    <motion.div 
+                      key={i} 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="p-4 hover:bg-emerald-50/50 cursor-pointer text-sm text-gray-700 border-b border-gray-50 last:border-b-0 transition-colors flex items-start gap-3 group"
+                      onClick={() => {
+                        setSource(s.display_name);
+                        setSourceCoords([parseFloat(s.lat), parseFloat(s.lon)]);
+                        setShowSourceSuggestions(false);
+                      }}
+                    >
+                      <MapPin size={16} className="text-emerald-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                      <span className="line-clamp-2 font-medium">{s.display_name}</span>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -197,23 +208,34 @@ export const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading, exter
             />
             
             {/* Destination Suggestions */}
-            {showDestSuggestions && destSuggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
-                {destSuggestions.map((s, i) => (
-                  <div 
-                    key={i} 
-                    className="p-3 hover:bg-emerald-50 cursor-pointer text-sm text-gray-700 border-b border-gray-50 last:border-b-0 transition-colors"
-                    onClick={() => {
-                      setDestination(s.display_name);
-                      setDestCoords([parseFloat(s.lat), parseFloat(s.lon)]);
-                      setShowDestSuggestions(false);
-                    }}
-                  >
-                    {s.display_name}
-                  </div>
-                ))}
-              </div>
-            )}
+            <AnimatePresence>
+              {showDestSuggestions && destSuggestions.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-white/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl z-[5000] max-h-64 overflow-y-auto overflow-x-hidden custom-scrollbar"
+                >
+                  {destSuggestions.map((s, i) => (
+                    <motion.div 
+                      key={i} 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="p-4 hover:bg-emerald-50/50 cursor-pointer text-sm text-gray-700 border-b border-gray-50 last:border-b-0 transition-colors flex items-start gap-3 group"
+                      onClick={() => {
+                        setDestination(s.display_name);
+                        setDestCoords([parseFloat(s.lat), parseFloat(s.lon)]);
+                        setShowDestSuggestions(false);
+                      }}
+                    >
+                      <MapPin size={16} className="text-emerald-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                      <span className="line-clamp-2 font-medium">{s.display_name}</span>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 

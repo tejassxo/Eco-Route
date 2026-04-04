@@ -66,7 +66,7 @@ export const LandingPage = () => {
             className="hero-btn px-8 py-4 bg-white text-gray-900 border-2 border-gray-100 rounded-2xl font-bold text-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
           >
             <User size={20} />
-            <span>Sign in with Google</span>
+            <span>Login with Google</span>
           </button>
         ) : (
           <Link 
