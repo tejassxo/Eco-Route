@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { X, Leaf, Compass, Volume2, VolumeX } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { RouteData, VehicleType } from '../types';
 import { calculateEmissions } from '../utils/emissionCalculator';
 
@@ -127,6 +128,16 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ route, veh
     };
   }, []);
 
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [feedbackText, setFeedbackText] = useState('');
+
+  const handleFeedbackSubmit = () => {
+    console.log('Feedback submitted:', { rating, feedbackText, routeId: route.id });
+    setShowFeedback(false);
+    // In a real app, this would be sent to a backend
+  };
+
   return (
     <div ref={containerRef} className="absolute inset-x-0 top-0 z-[1500] p-4 pointer-events-none flex flex-col items-center gap-3" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
       
@@ -154,6 +165,13 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ route, veh
             {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
           <button 
+            onClick={() => setShowFeedback(true)}
+            className="w-10 h-10 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center transition-colors"
+            title="Provide Feedback"
+          >
+            <Leaf size={18} />
+          </button>
+          <button 
             onClick={onStop}
             className="w-10 h-10 bg-red-50 hover:bg-red-100 text-red-600 rounded-full flex items-center justify-center transition-colors"
             title="Stop Navigation"
@@ -162,6 +180,55 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ route, veh
           </button>
         </div>
       </div>
+
+      {/* Feedback Modal */}
+      <AnimatePresence>
+        {showFeedback && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-100 p-6 pointer-events-auto mt-4"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-black text-gray-900">Route Feedback</h3>
+              <button onClick={() => setShowFeedback(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-6 font-medium">How was this route? Your feedback helps us improve eco-routing.</p>
+            
+            <div className="flex justify-center gap-3 mb-6">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button 
+                  key={star}
+                  onClick={() => setRating(star)}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                    rating >= star ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                  }`}
+                >
+                  <Leaf size={20} fill={rating >= star ? 'currentColor' : 'none'} />
+                </button>
+              ))}
+            </div>
+
+            <textarea 
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="Any issues or suggestions? (e.g., road closed, better path...)"
+              className="w-full h-24 p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 mb-4 resize-none"
+            />
+
+            <button 
+              onClick={handleFeedbackSubmit}
+              disabled={rating === 0}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all disabled:opacity-50"
+            >
+              Submit Feedback
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Bottom Bar: Stats (Compact) */}
       <div className="w-full max-w-md flex gap-2 pointer-events-auto">

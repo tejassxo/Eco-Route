@@ -67,6 +67,11 @@ const MapPage = () => {
   });
 
   const handleMapClick = async (lat: number, lon: number) => {
+    // Clear existing routes and selection when clicking on map to set new destination
+    setRoutes([]);
+    setSelectedRouteIndex(0);
+    setError(null);
+    
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
         headers: { 'User-Agent': 'EcoRouteApp/1.0' }
