@@ -58,10 +58,14 @@ const MapController = ({ routes, selectedRouteIndex, isNavigating, carPosition, 
   return null;
 };
 
-const MapEvents = ({ onMapClick }: { onMapClick?: (lat: number, lon: number) => void }) => {
+const MapEvents = ({ onMapClick, onMoveEnd }: { onMapClick?: (lat: number, lon: number) => void, onMoveEnd?: (lat: number, lon: number) => void }) => {
   useMapEvents({
     click(e) {
       if (onMapClick) onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+    moveend(e) {
+      const center = e.target.getCenter();
+      if (onMoveEnd) onMoveEnd(center.lat, center.lng);
     }
   });
   return null;
@@ -94,13 +98,27 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const [chargingStations, setChargingStations] = useState<ChargingStation[]>([]);
   const [showStepsOverlay, setShowStepsOverlay] = useState(false);
 
+  const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+
   useEffect(() => {
-    if (vehicleType === VehicleType.ELECTRIC_VEHICLE && userLocation) {
-      getNearbyEVStations(userLocation[0], userLocation[1]).then(setChargingStations);
-    } else {
-      setChargingStations([]);
-    }
-  }, [vehicleType, userLocation]);
+    const fetchStations = async () => {
+      const location = mapCenter || userLocation;
+      if (vehicleType === VehicleType.ELECTRIC_VEHICLE && location) {
+        try {
+          const stations = await getNearbyEVStations(location[0], location[1]);
+          setChargingStations(stations);
+        } catch (error) {
+          console.error("Failed to fetch EV stations:", error);
+        }
+      } else if (vehicleType !== VehicleType.ELECTRIC_VEHICLE) {
+        setChargingStations([]);
+      }
+    };
+
+    // Debounce fetch to avoid excessive API calls on map move
+    const timeoutId = setTimeout(fetchStations, 500);
+    return () => clearTimeout(timeoutId);
+  }, [vehicleType, userLocation, mapCenter]);
 
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -356,7 +374,10 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           url={MAP_LAYERS[activeLayer].url} 
           attribution={activeLayer === 'satellite' ? '&copy; Esri' : activeLayer === 'terrain' ? '&copy; OpenTopoMap' : '&copy; OpenStreetMap'}
         />
-        <MapEvents onMapClick={onMapClick} />
+        <MapEvents 
+          onMapClick={onMapClick} 
+          onMoveEnd={(lat, lon) => setMapCenter([lat, lon])}
+        />
         
         {routes.map((route, index) => {
           const isSelected = index === selectedRouteIndex;

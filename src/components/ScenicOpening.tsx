@@ -39,7 +39,7 @@ export const ScenicOpening: React.FC<{ onComplete: () => void }> = ({ onComplete
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 select-none"
+      className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 select-none overflow-y-auto"
     >
       {/* Cinematic Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-blue-50 z-0" />

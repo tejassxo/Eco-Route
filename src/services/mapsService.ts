@@ -8,10 +8,10 @@ export interface ChargingStation {
 }
 
 export const getNearbyEVStations = async (lat: number, lng: number): Promise<ChargingStation[]> => {
-  if (!(process.env.API_KEY || process.env.GEMINI_API_KEY)) return [];
+  if (!process.env.GEMINI_API_KEY) return [];
 
   try {
-    const ai = new GoogleGenAI({ apiKey: (process.env.API_KEY || process.env.GEMINI_API_KEY) as string });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Find 5 electric vehicle charging stations near latitude ${lat}, longitude ${lng}. Return a JSON array of objects with 'name', 'lat', 'lng', and 'address'.`,

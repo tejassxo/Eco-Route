@@ -6,14 +6,70 @@ import { Leaf, Map, User, ArrowRight, Info } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const LandingPage = () => {
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { user, login } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".hero-text", { opacity: 0, y: 30, duration: 1, stagger: 0.2, ease: "power3.out" });
-      gsap.from(".hero-btn", { opacity: 0, y: 20, duration: 0.8, delay: 0.6, stagger: 0.1, ease: "power3.out" });
+    if (!containerRef.current) return;
+
+    const ctx = gsap.context((self) => {
+      // Premium Apple-style entrance animations
+      const tl = gsap.timeline();
+      
+      // Target the root container directly via ref to avoid "not found" warning
+      tl.from(containerRef.current, {
+        scale: 0.95,
+        opacity: 0,
+        duration: 1.5,
+        ease: "expo.out"
+      })
+      .from(".hero-icon", { 
+        scale: 0.5, 
+        opacity: 0, 
+        duration: 1.2, 
+        ease: "expo.out",
+        rotation: -15
+      }, "-=1.2") // Start with container
+      .from(".hero-title", { 
+        y: 40, 
+        opacity: 0, 
+        duration: 1, 
+        ease: "power4.out",
+        stagger: 0.1
+      }, "-=0.8")
+      .from(".hero-subtitle", { 
+        y: 20, 
+        opacity: 0, 
+        duration: 1, 
+        ease: "power3.out" 
+      }, "-=0.6")
+      .fromTo(".hero-btn", 
+        { y: 20, opacity: 0 },
+        { 
+          y: 0, 
+          opacity: 1, 
+          duration: 0.8, 
+          stagger: 0.15, 
+          ease: "back.out(1.2)" 
+        }, 
+        "-=0.6"
+      )
+      .from(".hero-footer", {
+        opacity: 0,
+        duration: 1,
+        ease: "power2.out"
+      }, "-=0.4");
+
+      // Floating animation for the icon
+      gsap.to(".hero-icon", {
+        y: -15,
+        duration: 2.5,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1
+      });
+
     }, containerRef);
     return () => ctx.revert();
   }, []);
@@ -27,59 +83,53 @@ export const LandingPage = () => {
   };
 
   return (
-    <div ref={containerRef} className="min-h-[100dvh] bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden font-sans">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/30 rounded-full blur-3xl" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-100/30 rounded-full blur-3xl" />
+    <div ref={containerRef} className="landing-container min-h-[100dvh] bg-natural-pattern flex flex-col items-center justify-center p-6 text-center relative overflow-y-auto font-sans">
+      {/* Subtle overlay to ensure text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0f291e]/50 to-[#0f291e]/90 pointer-events-none z-0" />
       
-      <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="w-20 h-20 bg-emerald-600 rounded-3xl flex items-center justify-center text-white mb-8 shadow-2xl shadow-emerald-200 relative z-10"
-      >
-        <Leaf size={40} />
-      </motion.div>
+      <div className="hero-icon w-24 h-24 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] flex items-center justify-center text-emerald-400 mb-10 shadow-2xl relative z-20">
+        <Leaf size={48} strokeWidth={1.5} />
+      </div>
 
-      <h1 className="hero-text text-6xl md:text-8xl font-black text-gray-900 mb-6 tracking-tighter relative z-10">
-        Eco<span className="text-emerald-600">Route</span>
+      <h1 className="hero-title text-6xl md:text-8xl font-black text-white mb-6 tracking-tighter relative z-20">
+        Eco<span className="text-emerald-400">Route</span>
       </h1>
       
-      <p className="hero-text text-xl md:text-2xl text-gray-600 mb-12 max-w-2xl font-medium leading-relaxed relative z-10">
+      <p className="hero-subtitle text-xl md:text-2xl text-emerald-50/80 mb-14 max-w-2xl font-medium leading-relaxed relative z-20">
         Navigate the world with a smaller footprint. <br className="hidden md:block" />
-        Smarter routes for a <span className="text-emerald-600 font-bold">greener planet</span>.
+        Smarter routes for a <span className="text-emerald-400 font-bold">greener planet</span>.
       </p>
 
-      <div className="flex flex-col sm:flex-row gap-4 relative z-10 w-full max-w-md sm:max-w-none justify-center">
+      <div className="flex flex-col sm:flex-row gap-5 relative z-30 w-full max-w-md sm:max-w-none justify-center mt-8">
         <button 
           onClick={handleStart}
-          className="hero-btn group px-8 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 flex items-center justify-center gap-2"
+          className="hero-btn group px-8 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-lg hover:bg-emerald-400 transition-all shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:shadow-[0_0_60px_rgba(16,185,129,0.5)] flex items-center justify-center gap-3"
         >
-          <Map size={20} />
+          <Map size={22} />
           <span>{user ? 'Go to Dashboard' : 'Start Journey'}</span>
-          <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
         </button>
 
         {!user ? (
           <button 
             onClick={login}
-            className="hero-btn px-8 py-4 bg-white text-gray-900 border-2 border-gray-100 rounded-2xl font-bold text-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+            className="hero-btn px-8 py-4 bg-white text-emerald-900 rounded-2xl font-bold text-lg hover:bg-emerald-50 transition-all flex items-center justify-center gap-3 shadow-xl"
           >
-            <User size={20} />
+            <User size={22} className="text-emerald-600" />
             <span>Login with Google</span>
           </button>
         ) : (
           <Link 
             to="/about"
-            className="hero-btn px-8 py-4 bg-white text-gray-900 border-2 border-gray-100 rounded-2xl font-bold text-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+            className="hero-btn px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl font-bold text-lg hover:bg-white/20 transition-all flex items-center justify-center gap-3"
           >
-            <Info size={20} />
+            <Info size={22} />
             <span>How it works</span>
           </Link>
         )}
       </div>
 
-      <footer className="absolute bottom-8 text-xs font-bold text-gray-400 uppercase tracking-widest">
+      <footer className="hero-footer absolute bottom-8 text-xs font-bold text-emerald-500/50 uppercase tracking-widest z-10">
         © 2026 EcoRoute • Sustainable Navigation
       </footer>
     </div>

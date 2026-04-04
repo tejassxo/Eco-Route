@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.47.0",
+    "@gsap/react": "^2.1.2",
     "express": "^4.21.2",
     "firebase": "^12.11.0",
     "gsap": "^3.14.2",

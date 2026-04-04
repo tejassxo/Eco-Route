@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { MapComponent } from './components/MapComponent';
 import { InputForm } from './components/InputForm';
 import { RouteCard } from './components/RouteCard';
@@ -7,7 +7,7 @@ import { NavigationOverlay } from './components/NavigationOverlay';
 import { VehicleType, RouteData, SavedRoute } from './types';
 import { calculateEmissions } from './utils/emissionCalculator';
 import { motion, AnimatePresence } from 'motion/react';
-import { Leaf, Info, AlertCircle, BarChart2, BookmarkPlus, Key } from 'lucide-react';
+import { Leaf, Info, AlertCircle, BarChart2, BookmarkPlus, Key, Navigation, User } from 'lucide-react';
 import { LandingPage } from './pages/LandingPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactUsPage } from './pages/ContactUsPage';
@@ -17,68 +17,13 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ScenicOpening } from './components/ScenicOpening';
 import { Dashboard } from './components/Dashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
-
-// Declare window.aistudio
-declare global {
-  interface Window {
-    aistudio?: {
-      hasSelectedApiKey: () => Promise<boolean>;
-      openSelectKey: () => Promise<void>;
-    };
-  }
-}
+import { Loader } from './components/Loader';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
-  const [hasKey, setHasKey] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    const checkKey = async () => {
-      if (window.aistudio) {
-        try {
-          const selected = await window.aistudio.hasSelectedApiKey();
-          setHasKey(selected);
-        } catch (e) {
-          console.error("Failed to check API key", e);
-          setHasKey(true); // Fallback to true if aistudio is not available
-        }
-      } else {
-        setHasKey(true); // Fallback to true if aistudio is not available
-      }
-    };
-    checkKey();
-  }, []);
-
-  if (loading || hasKey === null) return <div className="h-screen flex items-center justify-center"><Leaf className="animate-spin text-emerald-600" /></div>;
+  if (loading) return <Loader />;
   if (!user) return <Navigate to="/" />;
-
-  if (!hasKey) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Key size={32} />
-          </div>
-          <h2 className="text-2xl font-black text-gray-900 mb-4">API Key Required</h2>
-          <p className="text-gray-600 mb-8">
-            To use the advanced AI features of EcoRoute, you need to provide a Gemini API key. 
-            You can get one from the <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="text-emerald-600 font-bold hover:underline">Google AI Studio billing page</a>.
-          </p>
-          <button
-            onClick={async () => {
-              if (window.aistudio) {
-                await window.aistudio.openSelectKey();
-                setHasKey(true); // Assume success to mitigate race condition
-              }
-            }}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all"
-          >
-            Select API Key
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return <>{children}</>;
 };
@@ -105,6 +50,8 @@ const geocode = async (query: string) => {
 };
 
 const MapPage = () => {
+  const { user, login } = useAuth();
+  const navigate = useNavigate();
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -212,8 +159,8 @@ const MapPage = () => {
 
       let summaries = ["Main Route", "Alternative 1", "Alternative 2"];
       try {
-        if (process.env.API_KEY || process.env.GEMINI_API_KEY) {
-          const ai = new GoogleGenAI({ apiKey: (process.env.API_KEY || process.env.GEMINI_API_KEY) as string });
+        if (process.env.GEMINI_API_KEY) {
+          const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
           const prompt = `I have found ${osrmData.routes.length} driving routes from ${source} to ${destination}. Provide a short, catchy 2-3 word summary name for each route (e.g., "Fastest Route", "Scenic Path"). Return a JSON array of strings.`;
           const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
@@ -275,8 +222,8 @@ const MapPage = () => {
 
       // Fetch Eco Tips via Gemini
       try {
-        if (process.env.API_KEY || process.env.GEMINI_API_KEY) {
-          const ai = new GoogleGenAI({ apiKey: (process.env.API_KEY || process.env.GEMINI_API_KEY) as string });
+        if (process.env.GEMINI_API_KEY) {
+          const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
           const selectedRoute = finalRoutes[initialSelected];
           const prompt = `Provide 2-3 short, actionable eco-friendly driving tips for a ${selectedRoute.distance.toFixed(1)}km trip from ${source} to ${destination} using a ${vehicle}. Focus on reducing CO2 emissions.`;
           const response = await ai.models.generateContent({
@@ -376,14 +323,47 @@ const MapPage = () => {
               <div className="w-12 h-1.5 bg-gray-300/60 rounded-full"></div>
             </div>
 
-            <header className="px-6 pb-4 pt-2 lg:pt-6 border-b border-gray-50">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white">
-                  <Leaf size={18} />
+            <header className="px-6 pb-4 pt-2 lg:pt-6 border-b border-gray-50 flex items-start justify-between">
+              <div 
+                className="cursor-pointer group"
+                onClick={() => navigate('/')}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                    <Leaf size={18} />
+                  </div>
+                  <h1 className="text-2xl font-black text-gray-900 tracking-tight group-hover:text-emerald-600 transition-colors">EcoRoute</h1>
                 </div>
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight">EcoRoute</h1>
+                <p className="text-sm text-gray-500 font-medium">Smarter paths for a greener planet.</p>
               </div>
-              <p className="text-sm text-gray-500 font-medium">Smarter paths for a greener planet.</p>
+              
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => navigate('/')}
+                  className="p-2.5 bg-white/50 backdrop-blur-md text-gray-600 rounded-xl hover:bg-white transition-all flex items-center gap-2 font-bold text-xs border border-gray-100"
+                >
+                  <Navigation size={16} />
+                  <span className="hidden sm:inline">Home</span>
+                </button>
+                
+                {user ? (
+                  <button 
+                    onClick={() => navigate('/dashboard')}
+                    className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all flex items-center gap-2 font-bold text-xs"
+                  >
+                    <BarChart2 size={16} />
+                    <span className="hidden sm:inline">Dashboard</span>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={login}
+                    className="p-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all flex items-center gap-2 font-bold text-xs shadow-lg shadow-emerald-600/20"
+                  >
+                    <User size={16} />
+                    <span>Login</span>
+                  </button>
+                )}
+              </div>
             </header>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
@@ -505,37 +485,52 @@ const MapPage = () => {
   );
 };
 
-export default function App() {
+const MainContent = () => {
+  const { loading } = useAuth();
   const [showOpening, setShowOpening] = useState(true);
+
+  useEffect(() => {
+    const seen = localStorage.getItem('ecoRoute_opening_seen');
+    if (seen) setShowOpening(false);
+  }, []);
 
   const handleOpeningComplete = () => {
     setShowOpening(false);
+    localStorage.setItem('ecoRoute_opening_seen', 'true');
   };
 
+  if (loading) return <Loader />;
+
+  return (
+    <BrowserRouter>
+      <AnimatePresence>
+        {showOpening && <ScenicOpening onComplete={handleOpeningComplete} />}
+      </AnimatePresence>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactUsPage />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/map" element={
+          <div className="relative h-[100dvh]">
+            <MapPage />
+            <ChatVihari />
+          </div>
+        } />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
+export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <BrowserRouter>
-          <AnimatePresence>
-            {showOpening && <ScenicOpening onComplete={handleOpeningComplete} />}
-          </AnimatePresence>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactUsPage />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/map" element={
-              <div className="relative h-[100dvh]">
-                <MapPage />
-                <ChatVihari />
-              </div>
-            } />
-          </Routes>
-        </BrowserRouter>
+        <MainContent />
       </AuthProvider>
     </ErrorBoundary>
   );
