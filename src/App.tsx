@@ -9,6 +9,7 @@ import { calculateEmissions } from './utils/emissionCalculator';
 import { motion, AnimatePresence } from 'motion/react';
 import { Leaf, Info, AlertCircle, BarChart2, BookmarkPlus, Key, Navigation, User } from 'lucide-react';
 import { LandingPage } from './pages/LandingPage';
+import { LoginPage } from './pages/LoginPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactUsPage } from './pages/ContactUsPage';
 import { ChatVihari } from './components/ChatVihari';
@@ -361,7 +362,7 @@ const MapPage = () => {
                   </button>
                 ) : (
                   <button 
-                    onClick={login}
+                    onClick={() => navigate('/login')}
                     className="p-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all flex items-center gap-2 font-bold text-xs shadow-lg shadow-emerald-600/20"
                   >
                     <User size={16} />
@@ -513,6 +514,7 @@ const MainContent = () => {
       </AnimatePresence>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactUsPage />} />
         <Route path="/dashboard" element={
