@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, useMapEvents 
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { RouteData, VehicleType } from '../types';
-import { Compass, Navigation, Zap, LocateFixed, Map as MapIcon, List, X as CloseIcon, Battery } from 'lucide-react';
+import { Compass, Navigation, Zap, LocateFixed, Map as MapIcon, List, X as CloseIcon, Battery, Filter, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getNearbyEVStations, ChargingStation } from '../services/mapsService';
 
@@ -18,6 +18,13 @@ const DefaultIcon = L.icon({
   iconAnchor: [12, 41],
 });
 L.Marker.prototype.options.icon = DefaultIcon;
+
+const simplifyPolyline = (points: [number, number][], zoom: number) => {
+  if (zoom > 15) return points;
+  if (zoom > 12) return points.filter((_, i) => i % 2 === 0);
+  if (zoom > 10) return points.filter((_, i) => i % 5 === 0);
+  return points.filter((_, i) => i % 10 === 0);
+};
 
 const MAP_LAYERS = {
   street: { name: 'Street', url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' },
@@ -42,10 +49,16 @@ const MapController = ({ routes, selectedRouteIndex, isNavigating, carPosition, 
   const map = useMap();
 
   useEffect(() => {
-    if (shouldRecenter && userLocation) {
-      map.setView(userLocation, 16, { animate: true });
+    if (shouldRecenter > 0) {
+      if (isNavigating && carPosition) {
+        map.setView(carPosition, 16, { animate: true });
+      } else if (routes.length > 0 && routes[selectedRouteIndex]?.bounds) {
+        map.fitBounds(routes[selectedRouteIndex].bounds, { padding: [50, 50], animate: true });
+      } else if (userLocation) {
+        map.setView(userLocation, 16, { animate: true });
+      }
     }
-  }, [shouldRecenter, userLocation, map]);
+  }, [shouldRecenter, userLocation, map, isNavigating, carPosition, routes, selectedRouteIndex]);
 
   useEffect(() => {
     if (isNavigating && carPosition) {
@@ -58,7 +71,7 @@ const MapController = ({ routes, selectedRouteIndex, isNavigating, carPosition, 
   return null;
 };
 
-const MapEvents = ({ onMapClick, onMoveEnd }: { onMapClick?: (lat: number, lon: number) => void, onMoveEnd?: (lat: number, lon: number) => void }) => {
+const MapEvents = ({ onMapClick, onMoveEnd, onZoomEnd }: { onMapClick?: (lat: number, lon: number) => void, onMoveEnd?: (lat: number, lon: number) => void, onZoomEnd?: (zoom: number) => void }) => {
   useMapEvents({
     click(e) {
       if (onMapClick) onMapClick(e.latlng.lat, e.latlng.lng);
@@ -66,6 +79,9 @@ const MapEvents = ({ onMapClick, onMoveEnd }: { onMapClick?: (lat: number, lon: 
     moveend(e) {
       const center = e.target.getCenter();
       if (onMoveEnd) onMoveEnd(center.lat, center.lng);
+    },
+    zoomend(e) {
+      if (onZoomEnd) onZoomEnd(e.target.getZoom());
     }
   });
   return null;
@@ -99,6 +115,24 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const [showStepsOverlay, setShowStepsOverlay] = useState(false);
 
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+  const [zoom, setZoom] = useState(13);
+  const [filter, setFilter] = useState<{ type: 'none' | 'co2' | 'duration', value: string }>({ type: 'none', value: 'all' });
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+
+  const filteredRoutes = React.useMemo(() => {
+    if (filter.type === 'none') return routes;
+    
+    let sorted = [...routes];
+    if (filter.type === 'co2') {
+      if (filter.value === 'low') sorted = sorted.filter(r => r.emissions < 5);
+      if (filter.value === 'medium') sorted = sorted.filter(r => r.emissions >= 5 && r.emissions < 15);
+      if (filter.value === 'high') sorted = sorted.filter(r => r.emissions >= 15);
+    } else if (filter.type === 'duration') {
+      if (filter.value === 'fastest') sorted.sort((a, b) => a.duration - b.duration);
+      if (filter.value === 'shortest') sorted.sort((a, b) => a.distance - b.distance);
+    }
+    return sorted;
+  }, [routes, filter]);
 
   useEffect(() => {
     const fetchStations = async () => {
@@ -248,6 +282,67 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         >
           <LocateFixed size={24} className="group-hover/btn:rotate-12 transition-transform" />
         </button>
+
+        {/* Filter Menu */}
+        <div className="relative">
+          <button 
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+            className={`p-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 text-gray-700 hover:bg-white hover:text-emerald-600 transition-all active:scale-95 ${showFilterMenu ? 'text-emerald-600 ring-2 ring-emerald-500/20' : ''}`}
+            title="Filter Routes"
+          >
+            <Filter size={24} />
+          </button>
+          
+          <AnimatePresence>
+            {showFilterMenu && (
+              <motion.div 
+                initial={{ opacity: 0, x: 20, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 20, scale: 0.9 }}
+                className="absolute right-full mr-3 top-0 bg-white/95 backdrop-blur-xl p-3 rounded-2xl shadow-2xl border border-white/20 flex flex-col gap-3 min-w-[180px]"
+              >
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">CO₂ Emissions</p>
+                  <div className="grid grid-cols-1 gap-1">
+                    {['low', 'medium', 'high', 'all'].map((val) => (
+                      <button
+                        key={val}
+                        onClick={() => setFilter({ type: val === 'all' ? 'none' : 'co2', value: val })}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-left capitalize ${filter.type === 'co2' && filter.value === val ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-gray-600'}`}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="h-px bg-gray-100" />
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Sort By</p>
+                  <div className="grid grid-cols-1 gap-1">
+                    {['fastest', 'shortest'].map((val) => (
+                      <button
+                        key={val}
+                        onClick={() => setFilter({ type: 'duration', value: val })}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-left capitalize ${filter.type === 'duration' && filter.value === val ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-gray-600'}`}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {filter.type !== 'none' && (
+                  <button 
+                    onClick={() => setFilter({ type: 'none', value: 'all' })}
+                    className="mt-1 text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors text-center py-1"
+                  >
+                    Reset Filters
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <div className="relative">
           <button 
             onClick={() => setShowLayerMenu(!showLayerMenu)}
@@ -377,18 +472,21 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         <MapEvents 
           onMapClick={onMapClick} 
           onMoveEnd={(lat, lon) => setMapCenter([lat, lon])}
+          onZoomEnd={(z) => setZoom(z)}
         />
         
-        {routes.map((route, index) => {
+        {filteredRoutes.map((route, index) => {
           const isSelected = index === selectedRouteIndex;
           const isHovered = route.id === hoveredRouteId;
           if (!route.polyline || route.polyline.length === 0) return null;
+          
+          const simplifiedPoints = simplifyPolyline(route.polyline, zoom);
           
           return (
             <React.Fragment key={route.id}>
               {/* Halo effect for visibility on all layers */}
               <Polyline
-                positions={route.polyline}
+                positions={simplifiedPoints}
                 pathOptions={{
                   color: 'white',
                   weight: isHovered ? 12 : (isSelected ? 10 : 8),
@@ -398,7 +496,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                 }}
               />
               <Polyline
-                positions={route.polyline}
+                positions={simplifiedPoints}
                 pathOptions={{
                   color: isSelected ? (route.isEco ? '#10b981' : '#3b82f6') : '#9ca3af',
                   weight: isHovered ? 8 : (isSelected ? 6 : 4),
