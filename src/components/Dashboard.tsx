@@ -113,6 +113,13 @@ export const Dashboard: React.FC = () => {
             <Map size={14} />
             <span>Map</span>
           </Link>
+          <Link 
+            to="/login"
+            className="hidden sm:flex items-center gap-2 text-xs font-bold text-emerald-50/70 hover:text-white transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10"
+          >
+            <User size={14} />
+            <span>Login Page</span>
+          </Link>
         </div>
         
         <button 

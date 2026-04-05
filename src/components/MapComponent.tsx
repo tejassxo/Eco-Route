@@ -6,6 +6,7 @@ import { RouteData, VehicleType } from '../types';
 import { Compass, Navigation, Zap, LocateFixed, Map as MapIcon, List, X as CloseIcon, Battery, Filter, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getNearbyEVStations, ChargingStation, getRouteWithTraffic } from '../services/mapsService';
+import { useTheme } from '../context/ThemeContext';
 
 // Fix for default leaflet marker icons
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -28,6 +29,7 @@ const simplifyPolyline = (points: [number, number][], zoom: number) => {
 
 const MAP_LAYERS = {
   street: { name: 'Street', url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' },
+  dark: { name: 'Dark', url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' },
   satellite: { name: 'Satellite', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' },
   terrain: { name: 'Terrain', url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png' },
 };
@@ -101,6 +103,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   vehicleType,
   currentSearch
 }) => {
+  const { theme } = useTheme();
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [speed, setSpeed] = useState<number>(0);
@@ -111,7 +114,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const lastPosRef = useRef<{lat: number, lon: number, time: number} | null>(null);
 
   const [speedTrend, setSpeedTrend] = useState<'up' | 'down' | 'stable'>('stable');
-  const [activeLayer, setActiveLayer] = useState<keyof typeof MAP_LAYERS>('street');
+  const [activeLayer, setActiveLayer] = useState<keyof typeof MAP_LAYERS>(theme === 'dark' ? 'dark' : 'street');
   const [showLayerMenu, setShowLayerMenu] = useState(false);
   const [chargingStations, setChargingStations] = useState<ChargingStation[]>([]);
   const [showStepsOverlay, setShowStepsOverlay] = useState(false);
@@ -121,6 +124,10 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const [zoom, setZoom] = useState(13);
   const [filter, setFilter] = useState<{ type: 'none' | 'co2' | 'duration', value: string }>({ type: 'none', value: 'all' });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+
+  useEffect(() => {
+    setActiveLayer(theme === 'dark' ? 'dark' : 'street');
+  }, [theme]);
 
   useEffect(() => {
     const fetchTraffic = async () => {

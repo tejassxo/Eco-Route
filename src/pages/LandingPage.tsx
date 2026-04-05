@@ -112,11 +112,11 @@ export const LandingPage = () => {
 
         {!user ? (
           <button 
-            onClick={login}
+            onClick={() => navigate('/login')}
             className="hero-btn px-8 py-4 bg-white text-emerald-900 rounded-2xl font-bold text-lg hover:bg-emerald-50 transition-all flex items-center justify-center gap-3 shadow-xl"
           >
             <User size={22} className="text-emerald-600" />
-            <span>Login with Google</span>
+            <span>Login</span>
           </button>
         ) : (
           <Link 
