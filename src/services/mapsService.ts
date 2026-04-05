@@ -45,3 +45,33 @@ export const getNearbyEVStations = async (lat: number, lng: number): Promise<Cha
     return [];
   }
 };
+
+export const getRouteWithTraffic = async (source: string, destination: string): Promise<{ duration: number, distance: number, summary: string } | null> => {
+  if (!process.env.GEMINI_API_KEY) return null;
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Calculate a route from ${source} to ${destination} considering current traffic conditions. Return a JSON object with 'duration' (in minutes), 'distance' (in km), and a 'summary' of the route and traffic situation.`,
+      config: {
+        tools: [{ googleMaps: {} }],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            duration: { type: "NUMBER" },
+            distance: { type: "NUMBER" },
+            summary: { type: "STRING" }
+          },
+          required: ["duration", "distance", "summary"]
+        }
+      }
+    });
+
+    return JSON.parse(response.text || "{}");
+  } catch (error) {
+    console.error("Error fetching traffic-aware route via Gemini:", error);
+    return null;
+  }
+};

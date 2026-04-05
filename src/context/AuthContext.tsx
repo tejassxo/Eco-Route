@@ -30,7 +30,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("AuthContext: login success");
     } catch (error: any) {
       console.error("Login failed:", error);
-      throw new Error(error.message || "Login failed. Please try again.");
+      // Provide more context for deployment errors
+      const message = error.code === 'auth/unauthorized-domain' 
+        ? "Login failed: The current domain is not authorized in the Firebase Console. Please add this domain to 'Authorized domains' in Firebase Authentication settings."
+        : (error.message || "Login failed. Please try again.");
+      throw new Error(message);
     }
   };
 
