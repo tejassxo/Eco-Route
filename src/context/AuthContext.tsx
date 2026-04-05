@@ -8,7 +8,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPhoneNumber,
-  RecaptchaVerifier
+  RecaptchaVerifier,
+  sendEmailVerification
 } from '../firebase';
 import { doc, setDoc, getFirestore } from 'firebase/firestore';
 
@@ -19,6 +20,7 @@ interface AuthContextType {
   loading: boolean;
   signupWithEmail: (email: string, password: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
+  resendVerificationEmail: (email: string, password: string) => Promise<void>;
   setupRecaptcha: (containerId: string) => any;
   loginWithPhone: (phoneNumber: string, appVerifier: any) => Promise<any>;
   logout: () => Promise<void>;
@@ -32,8 +34,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      // Only set user if they are logged in via phone OR their email is verified
+      if (currentUser) {
+        if (currentUser.phoneNumber || currentUser.emailVerified) {
+          setUser(currentUser);
+        } else {
+          // If email is not verified, keep them logged out in the UI state
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
     return unsubscribe;
@@ -42,15 +54,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signupWithEmail = async (email: string, password: string) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Send verification email
+      await sendEmailVerification(userCredential.user);
+      
       try {
         await setDoc(doc(db, 'users', userCredential.user.uid), {
           email: email,
           createdAt: new Date(),
-          role: 'user'
+          role: 'user',
+          emailVerified: false
         });
       } catch (dbError) {
         console.warn("Could not save user profile to Firestore:", dbError);
       }
+      
+      // Force sign out so they have to verify before logging in
+      await signOut(auth);
     } catch (error: any) {
       console.error("Signup failed:", error);
       throw new Error(error.message);
@@ -59,9 +79,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithEmail = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Check if email is verified
+      if (!userCredential.user.emailVerified) {
+        await signOut(auth);
+        throw new Error("auth/email-not-verified");
+      }
     } catch (error: any) {
       console.error("Login failed:", error);
+      throw error; // Throw raw error to catch specific codes in UI
+    }
+  };
+
+  const resendVerificationEmail = async (email: string, password: string) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(userCredential.user);
+      await signOut(auth);
+    } catch (error: any) {
+      console.error("Resend verification failed:", error);
       throw new Error(error.message);
     }
   };
@@ -106,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signupWithEmail, loginWithEmail, setupRecaptcha, loginWithPhone, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, signupWithEmail, loginWithEmail, resendVerificationEmail, setupRecaptcha, loginWithPhone, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
