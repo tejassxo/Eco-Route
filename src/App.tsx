@@ -12,8 +12,10 @@ import { LandingPage } from './pages/LandingPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactUsPage } from './pages/ContactUsPage';
 import { ChatVihari } from './components/ChatVihari';
+import { ThemeToggle } from './components/ThemeToggle';
 import { GoogleGenAI, Type } from '@google/genai';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ScenicOpening } from './components/ScenicOpening';
 import { Dashboard } from './components/Dashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -340,6 +342,7 @@ const MapPage = () => {
               </div>
               
               <div className="flex items-center gap-2">
+                <ThemeToggle />
                 <button 
                   onClick={() => navigate('/')}
                   className="p-2.5 bg-white/50 backdrop-blur-md text-gray-600 rounded-xl hover:bg-white transition-all flex items-center gap-2 font-bold text-xs border border-gray-100"
@@ -534,7 +537,9 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <MainContent />
+        <ThemeProvider>
+          <MainContent />
+        </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

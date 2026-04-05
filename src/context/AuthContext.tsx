@@ -30,10 +30,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("AuthContext: login success");
     } catch (error: any) {
       console.error("Login failed:", error);
-      // Provide more context for deployment errors
-      const message = error.code === 'auth/unauthorized-domain' 
-        ? "Login failed: The current domain is not authorized in the Firebase Console. Please add this domain to 'Authorized domains' in Firebase Authentication settings."
-        : (error.message || "Login failed. Please try again.");
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      
+      let message = "Login failed. Please try again.";
+      
+      if (error.code === 'auth/unauthorized-domain') {
+        message = "Login failed: The current domain is not authorized in the Firebase Console. Please add your deployed domain (e.g., your-app-url.vercel.app) to 'Authorized domains' in Firebase Authentication settings.";
+      } else if (error.code === 'auth/popup-blocked') {
+        message = "Login failed: The popup was blocked by your browser. Please allow popups for this site.";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        message = "Login failed: The login popup was closed before completion.";
+      }
+      
       throw new Error(message);
     }
   };

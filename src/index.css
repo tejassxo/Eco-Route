@@ -6,8 +6,16 @@
 }
 
 @layer base {
+  :root {
+    --bg-primary: #ffffff;
+    --text-primary: #111827;
+  }
+  .dark {
+    --bg-primary: #111827;
+    --text-primary: #f9fafb;
+  }
   body {
-    @apply text-gray-900 antialiased;
+    @apply bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased transition-colors duration-300;
   }
 }
 
