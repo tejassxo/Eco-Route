@@ -261,6 +261,7 @@ const MapPage = () => {
           hoveredRouteId={hoveredRouteId}
           onRouteHover={setHoveredRouteId}
           vehicleType={currentVehicle}
+          currentSearch={currentSearch}
         />
         
         {/* Floating Stats Overlay (Hidden during navigation) */}
@@ -301,6 +302,7 @@ const MapPage = () => {
               setCarPosition(pos);
               setCarHeading(heading);
             }}
+            currentSearch={currentSearch}
           />
         )}
       </div>
@@ -516,10 +518,12 @@ const MainContent = () => {
           </ProtectedRoute>
         } />
         <Route path="/map" element={
-          <div className="relative h-[100dvh]">
-            <MapPage />
-            <ChatVihari />
-          </div>
+          <ProtectedRoute>
+            <div className="relative h-[100dvh]">
+              <MapPage />
+              <ChatVihari />
+            </div>
+          </ProtectedRoute>
         } />
       </Routes>
     </BrowserRouter>

@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { RouteData, VehicleType } from '../types';
 import { Compass, Navigation, Zap, LocateFixed, Map as MapIcon, List, X as CloseIcon, Battery, Filter, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getNearbyEVStations, ChargingStation } from '../services/mapsService';
+import { getNearbyEVStations, ChargingStation, getRouteWithTraffic } from '../services/mapsService';
 
 // Fix for default leaflet marker icons
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -43,6 +43,7 @@ interface MapComponentProps {
   hoveredRouteId?: string | number | null;
   onRouteHover?: (id: string | number | null) => void;
   vehicleType?: VehicleType;
+  currentSearch?: { source: string, destination: string } | null;
 }
 
 const MapController = ({ routes, selectedRouteIndex, isNavigating, carPosition, carHeading, userLocation, shouldRecenter }: any) => {
@@ -97,7 +98,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   onMapClick,
   hoveredRouteId,
   onRouteHover,
-  vehicleType
+  vehicleType,
+  currentSearch
 }) => {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -113,11 +115,24 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const [showLayerMenu, setShowLayerMenu] = useState(false);
   const [chargingStations, setChargingStations] = useState<ChargingStation[]>([]);
   const [showStepsOverlay, setShowStepsOverlay] = useState(false);
+  const [trafficData, setTrafficData] = useState<{ duration: number, distance: number, summary: string } | null>(null);
 
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const [zoom, setZoom] = useState(13);
   const [filter, setFilter] = useState<{ type: 'none' | 'co2' | 'duration', value: string }>({ type: 'none', value: 'all' });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+
+  useEffect(() => {
+    const fetchTraffic = async () => {
+      if (currentSearch) {
+        const data = await getRouteWithTraffic(currentSearch.source, currentSearch.destination);
+        setTrafficData(data);
+      } else {
+        setTrafficData(null);
+      }
+    };
+    fetchTraffic();
+  }, [currentSearch, selectedRouteIndex]);
 
   const filteredRoutes = React.useMemo(() => {
     if (filter.type === 'none') return routes;
@@ -282,6 +297,14 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         >
           <LocateFixed size={24} className="group-hover/btn:rotate-12 transition-transform" />
         </button>
+
+        {/* Traffic Info */}
+        {trafficData && (
+          <div className="bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-white/20 text-gray-700 text-xs font-bold text-center">
+            <p className="text-emerald-600">{trafficData.duration}m</p>
+            <p className="text-[10px] text-gray-400 uppercase">ETA</p>
+          </div>
+        )}
 
         {/* Filter Menu */}
         <div className="relative">

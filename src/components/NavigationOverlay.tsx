@@ -4,19 +4,22 @@ import { X, Leaf, Compass, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { RouteData, VehicleType } from '../types';
 import { calculateEmissions } from '../utils/emissionCalculator';
+import { getRouteWithTraffic } from '../services/mapsService';
 
 interface NavigationOverlayProps {
   route: RouteData;
   vehicle: VehicleType;
   onStop: () => void;
   onPositionUpdate: (pos: [number, number], heading: number) => void;
+  currentSearch?: { source: string, destination: string } | null;
 }
 
-export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ route, vehicle, onStop, onPositionUpdate }) => {
+export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ route, vehicle, onStop, onPositionUpdate, currentSearch }) => {
   const [speed, setSpeed] = useState(0);
   const [distanceCovered, setDistanceCovered] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [trafficData, setTrafficData] = useState<{ duration: number, distance: number, summary: string } | null>(null);
   
   const speedNeedleRef = useRef<SVGCircleElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,6 +27,16 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ route, veh
   const totalDistance = route.distance;
   const currentStep = route.steps?.[currentStepIndex] || { instruction: 'Follow the route', distance: 0 };
   const co2Emitted = calculateEmissions(distanceCovered, vehicle).co2;
+
+  useEffect(() => {
+    const fetchTraffic = async () => {
+      if (currentSearch) {
+        const data = await getRouteWithTraffic(currentSearch.source, currentSearch.destination);
+        setTrafficData(data);
+      }
+    };
+    fetchTraffic();
+  }, [currentSearch]);
 
   useEffect(() => {
     // Entrance animation
@@ -154,6 +167,9 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ route, veh
             <h2 className="text-lg font-bold text-gray-900 leading-tight line-clamp-2">
               {currentStep.instruction}
             </h2>
+            <p className="text-xs font-bold text-emerald-600 mt-1">
+              ETA: {new Date(Date.now() + (trafficData?.duration || route.duration) * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
           </div>
         </div>
         <div className="flex flex-col gap-2 ml-4 shrink-0">
