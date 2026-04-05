@@ -19,6 +19,8 @@ interface AuthContextType {
   loading: boolean;
   signupWithEmail: (email: string, password: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
+  setupRecaptcha: (containerId: string) => any;
+  loginWithPhone: (phoneNumber: string, appVerifier: any) => Promise<any>;
   logout: () => Promise<void>;
   updateProfile: (displayName: string, photoURL: string) => Promise<void>;
 }
@@ -40,12 +42,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signupWithEmail = async (email: string, password: string) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Store user profile in Firestore
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        email: email,
-        createdAt: new Date(),
-        role: 'user'
-      });
+      try {
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          email: email,
+          createdAt: new Date(),
+          role: 'user'
+        });
+      } catch (dbError) {
+        console.warn("Could not save user profile to Firestore:", dbError);
+      }
     } catch (error: any) {
       console.error("Signup failed:", error);
       throw new Error(error.message);
@@ -57,6 +62,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
       console.error("Login failed:", error);
+      throw new Error(error.message);
+    }
+  };
+
+  const setupRecaptcha = (containerId: string) => {
+    if (!(window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+        size: 'invisible',
+      });
+    }
+    return (window as any).recaptchaVerifier;
+  };
+
+  const loginWithPhone = async (phoneNumber: string, appVerifier: any) => {
+    try {
+      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+      return confirmationResult;
+    } catch (error: any) {
+      console.error("Phone login failed:", error);
       throw new Error(error.message);
     }
   };
@@ -82,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signupWithEmail, loginWithEmail, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, signupWithEmail, loginWithEmail, setupRecaptcha, loginWithPhone, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
