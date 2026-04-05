@@ -53,15 +53,15 @@ export const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading, exter
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (showSourceSuggestions) fetchSuggestions(source, setSourceSuggestions);
-    }, 800);
+      if (showSourceSuggestions && source.length >= 3) fetchSuggestions(source, setSourceSuggestions);
+    }, 300);
     return () => clearTimeout(handler);
   }, [source, showSourceSuggestions]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (showDestSuggestions) fetchSuggestions(destination, setDestSuggestions);
-    }, 800);
+      if (showDestSuggestions && destination.length >= 3) fetchSuggestions(destination, setDestSuggestions);
+    }, 300);
     return () => clearTimeout(handler);
   }, [destination, showDestSuggestions]);
 
