@@ -5,7 +5,7 @@ import { Mail, Lock, User } from 'lucide-react';
 import gsap from 'gsap';
 
 export const LoginPage: React.FC = () => {
-  const { login, signupWithEmail, loginWithEmail } = useAuth();
+  const { signupWithEmail, loginWithEmail } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -79,11 +79,6 @@ export const LoginPage: React.FC = () => {
         <button onClick={() => setIsSignup(!isSignup)} className="w-full mt-6 text-sm text-gray-500 font-medium hover:text-emerald-600 transition-colors">
           {isSignup ? 'Already have an account? Login' : 'Need an account? Sign Up'}
         </button>
-        <div className="mt-8 border-t border-gray-100 pt-6">
-          <button onClick={login} className="w-full flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-2xl hover:bg-gray-50 transition-all font-semibold text-gray-700">
-            <User size={20} /> Continue with Google
-          </button>
-        </div>
       </div>
     </div>
   );

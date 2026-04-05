@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 export const ScenicOpening: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [loginError, setLoginError] = useState<string | null>(null);
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,18 +19,6 @@ export const ScenicOpening: React.FC<{ onComplete: () => void }> = ({ onComplete
     onComplete();
     if (window.location.pathname === '/') {
       navigate('/map');
-    }
-  };
-
-  const handleLogin = async () => {
-    setLoginError(null);
-    try {
-      await login();
-      onComplete();
-      navigate('/dashboard');
-    } catch (e: any) {
-      console.error("Login error from opening:", e);
-      setLoginError(e.message || "Login failed. Please try again.");
     }
   };
 
@@ -116,7 +104,7 @@ export const ScenicOpening: React.FC<{ onComplete: () => void }> = ({ onComplete
           
           {!user && (
             <button 
-              onClick={handleLogin}
+              onClick={() => navigate('/login')}
               className="w-full sm:w-auto px-12 py-5 bg-white text-gray-900 border-4 border-emerald-600/20 rounded-2xl font-bold text-xl hover:bg-gray-50 transition-all hover:-translate-y-1 shadow-xl flex items-center justify-center gap-3 cursor-pointer active:scale-95"
             >
               <LogIn size={24} className="text-emerald-600" />
@@ -124,16 +112,6 @@ export const ScenicOpening: React.FC<{ onComplete: () => void }> = ({ onComplete
             </button>
           )}
         </motion.div>
-
-        {loginError && (
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-6 text-red-500 text-sm font-bold"
-          >
-            {loginError}
-          </motion.p>
-        )}
       </div>
 
       <footer className="absolute bottom-10 left-0 right-0 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] opacity-50 text-center z-50">

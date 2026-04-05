@@ -3,8 +3,6 @@ import {
   auth, 
   onAuthStateChanged, 
   User, 
-  signInWithPopup, 
-  googleProvider, 
   signOut, 
   updateProfile as firebaseUpdateProfile,
   signInWithEmailAndPassword,
@@ -19,7 +17,6 @@ const db = getFirestore();
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: () => Promise<void>;
   signupWithEmail: (email: string, password: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -39,18 +36,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     return unsubscribe;
   }, []);
-
-  const login = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error: any) {
-      console.error("Login failed:", error);
-      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        throw new Error("Login cancelled. Please try again.");
-      }
-      throw new Error(error.message);
-    }
-  };
 
   const signupWithEmail = async (email: string, password: string) => {
     try {
@@ -97,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signupWithEmail, loginWithEmail, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, signupWithEmail, loginWithEmail, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

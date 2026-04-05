@@ -7,7 +7,7 @@ import { motion } from 'motion/react';
 
 export const LandingPage = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

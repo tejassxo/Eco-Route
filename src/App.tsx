@@ -53,7 +53,7 @@ const geocode = async (query: string) => {
 };
 
 const MapPage = () => {
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);

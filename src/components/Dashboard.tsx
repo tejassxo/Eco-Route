@@ -290,18 +290,18 @@ export const Dashboard: React.FC = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
                     key={route.id} 
-                    className="bg-white/15 p-5 rounded-[1.5rem] border border-white/20 flex items-center justify-between hover:bg-white/25 transition-all group/item shadow-lg"
+                    className="bg-white/20 p-5 rounded-[1.5rem] border border-white/30 flex items-center justify-between hover:bg-white/30 transition-all group/item shadow-lg"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5">
                         <p className="text-white font-extrabold text-base truncate tracking-tight">{route.destination.split(',')[0]}</p>
                         {route.routeData?.isEco && (
-                          <span className="bg-emerald-500/30 text-emerald-300 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-emerald-500/40 backdrop-blur-sm">Eco</span>
+                          <span className="bg-emerald-500/40 text-emerald-100 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-emerald-500/50 backdrop-blur-sm">Eco</span>
                         )}
                       </div>
-                      <p className="text-emerald-200 font-bold text-xs uppercase tracking-widest flex items-center gap-2 opacity-90">
+                      <p className="text-emerald-100 font-bold text-xs uppercase tracking-widest flex items-center gap-2">
                         <span>{route.routeData?.distance?.toFixed(1) || '0.0'} km</span>
-                        <span className="w-1 h-1 bg-white/40 rounded-full" />
+                        <span className="w-1 h-1 bg-white/60 rounded-full" />
                         <span>{route.routeData?.emissions?.toFixed(1) || '0.0'} kg CO₂</span>
                       </p>
                     </div>

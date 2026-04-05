@@ -75,3 +75,32 @@ export const getRouteWithTraffic = async (source: string, destination: string): 
     return null;
   }
 };
+
+export const geocodeLocation = async (address: string): Promise<{ lat: number, lng: number } | null> => {
+  if (!process.env.GEMINI_API_KEY) return null;
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Find the latitude and longitude for the address: "${address}". Return a JSON object with 'lat' (number) and 'lng' (number).`,
+      config: {
+        tools: [{ googleMaps: {} }],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            lat: { type: "NUMBER" },
+            lng: { type: "NUMBER" }
+          },
+          required: ["lat", "lng"]
+        }
+      }
+    });
+
+    return JSON.parse(response.text || "{}");
+  } catch (error) {
+    console.error("Error geocoding location via Gemini:", error);
+    return null;
+  }
+};

@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { RouteData, VehicleType } from '../types';
 import { Compass, Navigation, Zap, LocateFixed, Map as MapIcon, List, X as CloseIcon, Battery, Filter, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getNearbyEVStations, ChargingStation, getRouteWithTraffic } from '../services/mapsService';
+import { getNearbyEVStations, ChargingStation, getRouteWithTraffic, geocodeLocation } from '../services/mapsService';
 import { useTheme } from '../context/ThemeContext';
 
 // Fix for default leaflet marker icons
@@ -124,6 +124,20 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const [zoom, setZoom] = useState(13);
   const [filter, setFilter] = useState<{ type: 'none' | 'co2' | 'duration', value: string }>({ type: 'none', value: 'all' });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResult, setSearchResult] = useState<[number, number] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    const result = await geocodeLocation(searchQuery);
+    if (result) {
+      setSearchResult([result.lat, result.lng]);
+      setMapCenter([result.lat, result.lng]);
+    }
+    setIsSearching(false);
+  };
 
   useEffect(() => {
     setActiveLayer(theme === 'dark' ? 'dark' : 'street');
@@ -288,6 +302,25 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
   return (
     <div className="relative w-full h-full group">
+      {/* Search Bar */}
+      <div className="absolute top-6 left-6 z-[1000] flex gap-2">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+          placeholder="Search location..."
+          className="px-4 py-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 outline-none focus:ring-2 focus:ring-emerald-500 w-64"
+        />
+        <button
+          onClick={handleSearch}
+          disabled={isSearching}
+          className="px-4 py-3 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 shadow-xl transition-all"
+        >
+          {isSearching ? '...' : 'Search'}
+        </button>
+      </div>
+
       {isLoading && <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-white/50 backdrop-blur-sm">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
@@ -573,6 +606,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         {isNavigating && carPosition && (
           <Marker position={carPosition} icon={customNavIcon} zIndexOffset={1000} />
         )}
+        {searchResult && <Marker position={searchResult} icon={DefaultIcon} />}
 
         <MapController 
           routes={routes} 
