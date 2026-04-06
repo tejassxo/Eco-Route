@@ -1,13 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
-import { useAuth } from '../context/AuthContext';
-import { Leaf, Map, User, ArrowRight, Info } from 'lucide-react';
+import { Leaf, Map, ArrowRight, Info } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const LandingPage = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,11 +73,7 @@ export const LandingPage = () => {
   }, []);
 
   const handleStart = () => {
-    if (user) {
-      navigate('/dashboard');
-    } else {
-      navigate('/map');
-    }
+    navigate('/map');
   };
 
   return (
@@ -106,27 +100,17 @@ export const LandingPage = () => {
           className="hero-btn group px-8 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-lg hover:bg-emerald-400 transition-all shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:shadow-[0_0_60px_rgba(16,185,129,0.5)] flex items-center justify-center gap-3"
         >
           <Map size={22} />
-          <span>{user ? 'Go to Dashboard' : 'Start Journey'}</span>
+          <span>Start Journey</span>
           <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
         </button>
 
-        {!user ? (
-          <button 
-            onClick={() => navigate('/login')}
-            className="hero-btn px-8 py-4 bg-white text-emerald-900 rounded-2xl font-bold text-lg hover:bg-emerald-50 transition-all flex items-center justify-center gap-3 shadow-xl"
-          >
-            <User size={22} className="text-emerald-600" />
-            <span>Sign In</span>
-          </button>
-        ) : (
-          <Link 
-            to="/about"
-            className="hero-btn px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl font-bold text-lg hover:bg-white/20 transition-all flex items-center justify-center gap-3"
-          >
-            <Info size={22} />
-            <span>How it works</span>
-          </Link>
-        )}
+        <Link 
+          to="/about"
+          className="hero-btn px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl font-bold text-lg hover:bg-white/20 transition-all flex items-center justify-center gap-3"
+        >
+          <Info size={22} />
+          <span>How it works</span>
+        </Link>
       </div>
 
       <footer className="hero-footer absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-md border-t border-white/10 py-6 px-8 z-10 w-full">

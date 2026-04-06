@@ -9,28 +9,17 @@ import { calculateEmissions } from './utils/emissionCalculator';
 import { motion, AnimatePresence } from 'motion/react';
 import { Leaf, Info, AlertCircle, BarChart2, BookmarkPlus, Key, Navigation, User } from 'lucide-react';
 import { LandingPage } from './pages/LandingPage';
-import { LoginPage } from './pages/LoginPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactUsPage } from './pages/ContactUsPage';
 import { CareersPage, BlogPage, TermsPage, PrivacyPage, CookiesPage, FeaturesPage, BuilderPage, VerificationPage } from './pages/ContentPages';
 import { ChatVihari } from './components/ChatVihari';
 import { ThemeToggle } from './components/ThemeToggle';
 import { GoogleGenAI, Type } from '@google/genai';
-import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ScenicOpening } from './components/ScenicOpening';
 import { Dashboard } from './components/Dashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Loader } from './components/Loader';
-
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) return <Loader />;
-  if (!user) return <Navigate to="/" />;
-
-  return <>{children}</>;
-};
 
 const geocode = async (query: string) => {
   try {
@@ -54,7 +43,6 @@ const geocode = async (query: string) => {
 };
 
 const MapPage = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
@@ -353,23 +341,13 @@ const MapPage = () => {
                   <span className="hidden sm:inline">Home</span>
                 </button>
                 
-                {user ? (
-                  <button 
-                    onClick={() => navigate('/dashboard')}
-                    className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all flex items-center gap-2 font-bold text-xs"
-                  >
-                    <BarChart2 size={16} />
-                    <span className="hidden sm:inline">Dashboard</span>
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => navigate('/login')}
-                    className="p-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all flex items-center gap-2 font-bold text-xs shadow-lg shadow-emerald-600/20"
-                  >
-                    <User size={16} />
-                    <span>Login</span>
-                  </button>
-                )}
+                <button 
+                  onClick={() => navigate('/dashboard')}
+                  className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all flex items-center gap-2 font-bold text-xs"
+                >
+                  <BarChart2 size={16} />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </button>
               </div>
             </header>
 
@@ -493,7 +471,6 @@ const MapPage = () => {
 };
 
 const MainContent = () => {
-  const { loading } = useAuth();
   const [showOpening, setShowOpening] = useState(true);
 
   useEffect(() => {
@@ -506,8 +483,6 @@ const MainContent = () => {
     localStorage.setItem('ecoRoute_opening_seen', 'true');
   };
 
-  if (loading) return <Loader />;
-
   return (
     <BrowserRouter>
       <AnimatePresence>
@@ -515,7 +490,6 @@ const MainContent = () => {
       </AnimatePresence>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactUsPage />} />
         <Route path="/careers" element={<CareersPage />} />
@@ -526,18 +500,12 @@ const MainContent = () => {
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/builder" element={<BuilderPage />} />
         <Route path="/verification" element={<VerificationPage />} />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/map" element={
-          <ProtectedRoute>
-            <div className="relative h-[100dvh]">
-              <MapPage />
-              <ChatVihari />
-            </div>
-          </ProtectedRoute>
+          <div className="relative h-[100dvh]">
+            <MapPage />
+            <ChatVihari />
+          </div>
         } />
       </Routes>
     </BrowserRouter>
@@ -547,11 +515,9 @@ const MainContent = () => {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <ThemeProvider>
-          <MainContent />
-        </ThemeProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <MainContent />
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

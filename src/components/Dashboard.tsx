@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { Leaf, LogOut, Map, History, Settings, User, ChevronRight, Edit2, Save, X, Camera } from 'lucide-react';
+import { Leaf, Map, History, Settings, ChevronRight, Edit2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { SavedRoute } from '../types';
 
 export const Dashboard: React.FC = () => {
-  const { user, logout, updateProfile } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(user?.displayName || '');
-  const [editPhoto, setEditPhoto] = useState(user?.photoURL || '');
-  const [isUpdating, setIsUpdating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
   const [showAllHistory, setShowAllHistory] = useState(false);
@@ -19,8 +13,6 @@ export const Dashboard: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user) return;
-    
     // Load saved routes
     const loadRoutes = () => {
       const saved = localStorage.getItem('eco_saved_routes');
@@ -50,28 +42,7 @@ export const Dashboard: React.FC = () => {
       });
     }, containerRef);
     return () => ctx.revert();
-  }, [user]);
-
-  if (!user) return null;
-
-  const handleUpdate = async () => {
-    if (!editName.trim()) {
-      setMessage({ type: 'error', text: 'Display name cannot be empty' });
-      return;
-    }
-    setIsUpdating(true);
-    setMessage(null);
-    try {
-      await updateProfile(editName, editPhoto);
-      setIsEditing(false);
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
-      setTimeout(() => setMessage(null), 3000);
-    } catch (e: any) {
-      setMessage({ type: 'error', text: e.message || 'Failed to update profile' });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  }, []);
 
   const clearHistory = () => {
     if (window.confirm('Are you sure you want to clear your journey history?')) {
@@ -113,153 +84,10 @@ export const Dashboard: React.FC = () => {
             <Map size={14} />
             <span>Map</span>
           </Link>
-          <Link 
-            to="/login"
-            className="hidden sm:flex items-center gap-2 text-xs font-bold text-emerald-50/70 hover:text-white transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10"
-          >
-            <User size={14} />
-            <span>Login Page</span>
-          </Link>
         </div>
-        
-        <button 
-          onClick={logout}
-          className="flex items-center gap-2 text-sm font-bold text-emerald-50/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl border border-white/10"
-        >
-          <LogOut size={16} />
-          <span>Sign Out</span>
-        </button>
       </header>
 
       <main className="flex-1 p-6 max-w-5xl mx-auto w-full space-y-8 relative z-10 pb-20">
-        {/* User Profile Card */}
-        <div className="dash-element bg-white/15 backdrop-blur-3xl p-8 rounded-[2.5rem] shadow-2xl border border-white/30 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-emerald-500/30 to-transparent" />
-          
-          <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-            <div className="relative group">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white/30 shadow-2xl bg-white/10">
-                {(isEditing ? editPhoto : user.photoURL) ? (
-                  <img 
-                    src={isEditing ? editPhoto : user.photoURL!} 
-                    alt={user.displayName || 'User'} 
-                    className="w-full h-full object-cover" 
-                    referrerPolicy="no-referrer" 
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-emerald-400">
-                    <User size={48} />
-                  </div>
-                )}
-              </div>
-              {isEditing && (
-                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-sm">
-                  <Camera className="text-white" size={24} />
-                </div>
-              )}
-            </div>
-
-            <div className="text-center md:text-left flex-1 space-y-4">
-              {isEditing ? (
-                <div className="space-y-4 max-w-md">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-emerald-200/70 uppercase tracking-widest ml-1">Display Name</label>
-                    <input 
-                      type="text" 
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="w-full px-4 py-3 bg-black/40 border border-white/20 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-white placeholder-white/30"
-                      placeholder="Your Name"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-emerald-200/70 uppercase tracking-widest ml-1">Photo URL</label>
-                    <input 
-                      type="text" 
-                      value={editPhoto}
-                      onChange={(e) => setEditPhoto(e.target.value)}
-                      className="w-full px-4 py-3 bg-black/40 border border-white/20 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm text-white/80 placeholder-white/30"
-                      placeholder="https://example.com/photo.jpg"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <h2 className="text-4xl font-black text-white mb-1 tracking-tight">{user.displayName || 'Eco Explorer'}</h2>
-                    <p className="text-emerald-50/80 font-medium">{user.email}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                    <span className="bg-emerald-500/30 text-emerald-200 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border border-emerald-500/40 backdrop-blur-md">
-                      Eco Warrior
-                    </span>
-                    <span className="bg-blue-500/30 text-blue-200 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border border-blue-500/40 backdrop-blur-md">
-                      Level 4
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-3 w-full md:w-auto">
-              {isEditing ? (
-                <>
-                  <button 
-                    onClick={handleUpdate}
-                    disabled={isUpdating}
-                    className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-6 py-3 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <Save size={18} />
-                    <span>{isUpdating ? 'Saving...' : 'Save Changes'}</span>
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditName(user.displayName || '');
-                      setEditPhoto(user.photoURL || '');
-                    }}
-                    className="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-2xl transition-all flex items-center justify-center gap-2 border border-white/20"
-                  >
-                    <X size={18} />
-                    <span>Cancel</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button 
-                    onClick={() => setIsEditing(true)}
-                    className="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-2xl border border-white/20 transition-all flex items-center justify-center gap-2 backdrop-blur-md"
-                  >
-                    <Edit2 size={18} />
-                    <span>Edit Profile</span>
-                  </button>
-                  <Link 
-                    to="/map"
-                    className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-6 py-3 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center gap-2"
-                  >
-                    <Map size={18} />
-                    <span>Start Journey</span>
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {message && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className={`mt-6 p-4 rounded-xl text-sm font-bold text-center backdrop-blur-md ${
-                  message.type === 'success' ? 'bg-emerald-500/30 text-emerald-100 border border-emerald-500/40' : 'bg-red-500/30 text-red-100 border border-red-500/40'
-                }`}
-              >
-                {message.text}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
         {/* Quick Actions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

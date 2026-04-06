@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Leaf, LogIn, ArrowRight } from 'lucide-react';
+import { Leaf, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export const ScenicOpening: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -101,16 +98,6 @@ export const ScenicOpening: React.FC<{ onComplete: () => void }> = ({ onComplete
             <span>Get Started</span>
             <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
           </button>
-          
-          {!user && (
-            <button 
-              onClick={() => navigate('/login')}
-              className="w-full sm:w-auto px-12 py-5 bg-white text-gray-900 border-4 border-emerald-600/20 rounded-2xl font-bold text-xl hover:bg-gray-50 transition-all hover:-translate-y-1 shadow-xl flex items-center justify-center gap-3 cursor-pointer active:scale-95"
-            >
-              <LogIn size={24} className="text-emerald-600" />
-              <span>Login</span>
-            </button>
-          )}
         </motion.div>
       </div>
 

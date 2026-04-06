@@ -134,7 +134,7 @@ export const BuilderPage = () => (
         </svg>
       </div>
       <h2 className="text-2xl font-bold m-0">Builder Interface</h2>
-      <p className="text-gray-500 mt-2 max-w-md mx-auto">The visual builder requires authentication. Please sign in to access the drag-and-drop certificate designer.</p>
+      <p className="text-gray-500 mt-2 max-w-md mx-auto">Design and customize your eco-friendly certificates here.</p>
     </div>
   </PageLayout>
 );
