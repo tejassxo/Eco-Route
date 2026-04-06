@@ -56,7 +56,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
       // Send verification email
-      await sendEmailVerification(userCredential.user);
+      const actionCodeSettings = {
+        url: window.location.origin + '/login',
+      };
+      await sendEmailVerification(userCredential.user, actionCodeSettings);
       
       try {
         await setDoc(doc(db, 'users', userCredential.user.uid), {
@@ -95,7 +98,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resendVerificationEmail = async (email: string, password: string) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(userCredential.user);
+      const actionCodeSettings = {
+        url: window.location.origin + '/login',
+      };
+      await sendEmailVerification(userCredential.user, actionCodeSettings);
       await signOut(auth);
     } catch (error: any) {
       console.error("Resend verification failed:", error);

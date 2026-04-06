@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Phone, KeyRound, AlertCircle, CheckCircle2 } from 'lucide-react';
 import gsap from 'gsap';
+import { Loader } from '../components/Loader';
 
 export const LoginPage: React.FC = () => {
   const { signupWithEmail, loginWithEmail, resendVerificationEmail, setupRecaptcha, loginWithPhone } = useAuth();
@@ -186,140 +187,143 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div 
-        ref={containerRef}
-        className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-gray-100"
-      >
-        <h2 className="text-3xl font-black mb-6 text-center text-gray-900 tracking-tight">
-          {authMethod === 'phone' && confirmationResult ? 'Verify Code' : isSignup ? 'Create Account' : 'Welcome Back'}
-        </h2>
-        
-        {/* Auth Method Toggle */}
-        {!confirmationResult && (
-          <div className="flex bg-gray-100 p-1 rounded-xl mb-8">
-            <button
-              onClick={() => { setAuthMethod('email'); setError(''); setSuccessMsg(''); }}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${authMethod === 'email' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              Email
-            </button>
-            <button
-              onClick={() => { setAuthMethod('phone'); setError(''); setSuccessMsg(''); }}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${authMethod === 'phone' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              Phone
-            </button>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-100 p-3 rounded-xl flex items-start gap-3 mb-6">
-            <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
-            <p className="text-sm text-red-700 font-medium">{error}</p>
-          </div>
-        )}
-
-        {successMsg && (
-          <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-xl flex items-start gap-3 mb-6">
-            <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={18} />
-            <p className="text-sm text-emerald-700 font-medium">{successMsg}</p>
-          </div>
-        )}
-        
-        {authMethod === 'email' ? (
-          <form onSubmit={handleEmailSubmit} className="space-y-5">
-            <div className="relative">
-              <Mail className="absolute left-4 top-3.5 text-gray-400" size={20} />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                required
-                disabled={!!lockoutTime}
-              />
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-4 top-3.5 text-gray-400" size={20} />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                required
-                disabled={!!lockoutTime}
-              />
-            </div>
-            
-            {needsVerification ? (
-              <button 
-                type="button" 
-                onClick={handleResendVerification}
-                disabled={isLoading || !!lockoutTime} 
-                className="w-full bg-blue-600 text-white py-3 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 text-lg disabled:opacity-70"
+    <>
+      {isLoading && <Loader />}
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div 
+          ref={containerRef}
+          className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-gray-100"
+        >
+          <h2 className="text-3xl font-black mb-6 text-center text-gray-900 tracking-tight">
+            {authMethod === 'phone' && confirmationResult ? 'Verify Code' : isSignup ? 'Create Account' : 'Welcome Back'}
+          </h2>
+          
+          {/* Auth Method Toggle */}
+          {!confirmationResult && (
+            <div className="flex bg-gray-100 p-1 rounded-xl mb-8">
+              <button
+                onClick={() => { setAuthMethod('email'); setError(''); setSuccessMsg(''); }}
+                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${authMethod === 'email' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                {isLoading ? 'Processing...' : 'Resend Verification Email'}
+                Email
               </button>
-            ) : (
-              <button 
-                type="submit" 
-                disabled={isLoading || !!lockoutTime} 
-                className="w-full bg-emerald-600 text-white py-3 rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 text-lg disabled:opacity-70"
+              <button
+                onClick={() => { setAuthMethod('phone'); setError(''); setSuccessMsg(''); }}
+                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${authMethod === 'phone' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                {isLoading ? 'Processing...' : isSignup ? 'Sign Up' : 'Login'}
+                Phone
               </button>
-            )}
-          </form>
-        ) : (
-          <form onSubmit={handlePhoneSubmit} className="space-y-5">
-            {!confirmationResult ? (
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-100 p-3 rounded-xl flex items-start gap-3 mb-6">
+              <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+              <p className="text-sm text-red-700 font-medium">{error}</p>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-xl flex items-start gap-3 mb-6">
+              <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={18} />
+              <p className="text-sm text-emerald-700 font-medium">{successMsg}</p>
+            </div>
+          )}
+          
+          {authMethod === 'email' ? (
+            <form onSubmit={handleEmailSubmit} className="space-y-5">
               <div className="relative">
-                <Phone className="absolute left-4 top-3.5 text-gray-400" size={20} />
+                <Mail className="absolute left-4 top-3.5 text-gray-400" size={20} />
                 <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Phone number (e.g. +1234567890)"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email address"
                   className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                   required
                   disabled={!!lockoutTime}
                 />
               </div>
-            ) : (
               <div className="relative">
-                <KeyRound className="absolute left-4 top-3.5 text-gray-400" size={20} />
+                <Lock className="absolute left-4 top-3.5 text-gray-400" size={20} />
                 <input
-                  type="text"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  placeholder="6-digit verification code"
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all tracking-widest"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                   required
                   disabled={!!lockoutTime}
                 />
               </div>
-            )}
-            <div id="recaptcha-container"></div>
-            <button type="submit" disabled={isLoading || !!lockoutTime} className="w-full bg-emerald-600 text-white py-3 rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 text-lg disabled:opacity-70">
-              {isLoading ? 'Processing...' : !confirmationResult ? 'Send Code' : 'Verify Code'}
-            </button>
-            {confirmationResult && (
-              <button type="button" onClick={() => { setConfirmationResult(null); setError(''); setSuccessMsg(''); }} className="w-full text-sm text-gray-500 font-medium hover:text-emerald-600 transition-colors">
-                Use a different phone number
+              
+              {needsVerification ? (
+                <button 
+                  type="button" 
+                  onClick={handleResendVerification}
+                  disabled={isLoading || !!lockoutTime} 
+                  className="w-full bg-blue-600 text-white py-3 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 text-lg disabled:opacity-70"
+                >
+                  {isLoading ? 'Processing...' : 'Resend Verification Email'}
+                </button>
+              ) : (
+                <button 
+                  type="submit" 
+                  disabled={isLoading || !!lockoutTime} 
+                  className="w-full bg-emerald-600 text-white py-3 rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 text-lg disabled:opacity-70"
+                >
+                  {isLoading ? 'Processing...' : isSignup ? 'Sign Up' : 'Login'}
+                </button>
+              )}
+            </form>
+          ) : (
+            <form onSubmit={handlePhoneSubmit} className="space-y-5">
+              {!confirmationResult ? (
+                <div className="relative">
+                  <Phone className="absolute left-4 top-3.5 text-gray-400" size={20} />
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="Phone number (e.g. +1234567890)"
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    required
+                    disabled={!!lockoutTime}
+                  />
+                </div>
+              ) : (
+                <div className="relative">
+                  <KeyRound className="absolute left-4 top-3.5 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    placeholder="6-digit verification code"
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all tracking-widest"
+                    required
+                    disabled={!!lockoutTime}
+                  />
+                </div>
+              )}
+              <div id="recaptcha-container"></div>
+              <button type="submit" disabled={isLoading || !!lockoutTime} className="w-full bg-emerald-600 text-white py-3 rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 text-lg disabled:opacity-70">
+                {isLoading ? 'Processing...' : !confirmationResult ? 'Send Code' : 'Verify Code'}
               </button>
-            )}
-          </form>
-        )}
+              {confirmationResult && (
+                <button type="button" onClick={() => { setConfirmationResult(null); setError(''); setSuccessMsg(''); }} className="w-full text-sm text-gray-500 font-medium hover:text-emerald-600 transition-colors">
+                  Use a different phone number
+                </button>
+              )}
+            </form>
+          )}
 
-        {!confirmationResult && authMethod === 'email' && (
-          <button onClick={() => { setIsSignup(!isSignup); setError(''); setSuccessMsg(''); setNeedsVerification(false); }} className="w-full mt-6 text-sm text-gray-500 font-medium hover:text-emerald-600 transition-colors">
-            {isSignup ? 'Already have an account? Login' : 'Need an account? Sign Up'}
-          </button>
-        )}
+          {!confirmationResult && authMethod === 'email' && (
+            <button onClick={() => { setIsSignup(!isSignup); setError(''); setSuccessMsg(''); setNeedsVerification(false); }} className="w-full mt-6 text-sm text-gray-500 font-medium hover:text-emerald-600 transition-colors">
+              {isSignup ? 'Already have an account? Login' : 'Need an account? Sign Up'}
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
