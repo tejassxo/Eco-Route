@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Leaf, Map, History, Settings, ChevronRight, Edit2, X } from 'lucide-react';
+import { Leaf, Map, History, Settings, ChevronRight, Edit2, X, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { SavedRoute } from '../types';
@@ -77,6 +77,14 @@ export const Dashboard: React.FC = () => {
             <h1 className="text-xl font-black text-white tracking-tight group-hover:text-emerald-400 transition-colors">EcoRoute</h1>
           </Link>
           
+          <Link 
+            to="/"
+            className="hidden sm:flex items-center gap-2 text-xs font-bold text-emerald-50/70 hover:text-white transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10"
+          >
+            <ArrowLeft size={14} />
+            <span>Back to Home</span>
+          </Link>
+
           <Link 
             to="/map"
             className="hidden sm:flex items-center gap-2 text-xs font-bold text-emerald-50/70 hover:text-white transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10"

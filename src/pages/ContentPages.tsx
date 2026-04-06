@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 const PageLayout: React.FC<{ title: string; subtitle: string; children: React.ReactNode }> = ({ title, subtitle, children }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -20,8 +22,11 @@ const PageLayout: React.FC<{ title: string; subtitle: string; children: React.Re
   }, []);
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-[#fafafa] pt-24 pb-12 px-6 font-sans text-gray-900">
+    <div ref={containerRef} className="min-h-screen bg-[#fafafa] pt-12 pb-12 px-6 font-sans text-gray-900">
       <div className="max-w-4xl mx-auto">
+        <Link to="/" className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium mb-8">
+          <ArrowLeft size={20} /> Back to Home
+        </Link>
         <div className="page-header mb-12 border-b border-gray-200 pb-8">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">{title}</h1>
           <p className="text-xl text-gray-500">{subtitle}</p>
