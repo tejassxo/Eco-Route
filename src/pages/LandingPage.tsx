@@ -116,7 +116,7 @@ export const LandingPage = () => {
             className="hero-btn px-8 py-4 bg-white text-emerald-900 rounded-2xl font-bold text-lg hover:bg-emerald-50 transition-all flex items-center justify-center gap-3 shadow-xl"
           >
             <User size={22} className="text-emerald-600" />
-            <span>Login</span>
+            <span>Sign In</span>
           </button>
         ) : (
           <Link 
@@ -129,8 +129,21 @@ export const LandingPage = () => {
         )}
       </div>
 
-      <footer className="hero-footer absolute bottom-8 text-xs font-bold text-emerald-500/50 uppercase tracking-widest z-10">
-        © 2026 EcoRoute • Sustainable Navigation
+      <footer className="hero-footer absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-md border-t border-white/10 py-6 px-8 z-10 w-full">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex gap-6 text-sm font-medium text-white/70">
+            <Link to="/features" className="hover:text-white transition-colors">Features</Link>
+            <Link to="/builder" className="hover:text-white transition-colors">Builder</Link>
+            <Link to="/verification" className="hover:text-white transition-colors">Verification</Link>
+            <Link to="/careers" className="hover:text-white transition-colors">Careers</Link>
+            <Link to="/blog" className="hover:text-white transition-colors">Blog</Link>
+          </div>
+          <div className="flex gap-6 text-sm font-medium text-white/50">
+            <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+            <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link to="/cookies" className="hover:text-white transition-colors">Cookies</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );

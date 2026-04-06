@@ -12,6 +12,7 @@ import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactUsPage } from './pages/ContactUsPage';
+import { CareersPage, BlogPage, TermsPage, PrivacyPage, CookiesPage, FeaturesPage, BuilderPage, VerificationPage } from './pages/ContentPages';
 import { ChatVihari } from './components/ChatVihari';
 import { ThemeToggle } from './components/ThemeToggle';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -517,6 +518,14 @@ const MainContent = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactUsPage />} />
+        <Route path="/careers" element={<CareersPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/cookies" element={<CookiesPage />} />
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/builder" element={<BuilderPage />} />
+        <Route path="/verification" element={<VerificationPage />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
