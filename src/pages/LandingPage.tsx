@@ -117,10 +117,6 @@ export const LandingPage = () => {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex gap-6 text-sm font-medium text-white/70">
             <Link to="/features" className="hover:text-white transition-colors">Features</Link>
-            <Link to="/builder" className="hover:text-white transition-colors">Builder</Link>
-            <Link to="/verification" className="hover:text-white transition-colors">Verification</Link>
-            <Link to="/careers" className="hover:text-white transition-colors">Careers</Link>
-            <Link to="/blog" className="hover:text-white transition-colors">Blog</Link>
           </div>
           <div className="flex gap-6 text-sm font-medium text-white/50">
             <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
